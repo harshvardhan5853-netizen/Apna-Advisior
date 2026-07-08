@@ -3,10 +3,16 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  FileSpreadsheet,
+  FileText,
   History,
+  Image,
+  Link,
   Merge,
   Plus,
+  Shield,
   Undo2,
+  Upload,
   Wallet,
   X,
 } from "lucide-react";
@@ -51,8 +57,22 @@ export function PortfolioCard() {
   };
 
   return (
-    <div className="relative flex h-full flex-col gap-4 overflow-hidden p-5 glass md:p-6">
-      {/* Ambient tint */}
+    <div className="relative flex h-full flex-col gap-4 overflow-hidden p-5 card-emerald md:p-6">
+      {/* Upload illustration */}
+      <svg
+        viewBox="0 0 200 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="pointer-events-none absolute -right-4 -top-4 h-40 w-40 opacity-10"
+        style={{ mixBlendMode: "screen" }}
+        aria-hidden
+      >
+        <path d="M100 40v80M70 70l30-30 30 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-emerald-300" />
+        <rect x="55" y="110" width="90" height="60" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-emerald-300/60" />
+        <path d="M75 130h50M75 145h35M75 160h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-emerald-300/40" />
+        <circle cx="160" cy="50" r="20" stroke="currentColor" strokeWidth="1" className="text-emerald-300/30" />
+        <path d="M155 50h10M160 45v10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-emerald-300/30" />
+      </svg>
       <div
         aria-hidden
         className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl"
@@ -97,88 +117,137 @@ export function PortfolioCard() {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="relative flex flex-1 flex-col gap-4">
-        {loading && <LoadingState />}
+      {/* Import method chips */}
+      <div className="relative flex flex-wrap items-center gap-1.5">
+        {[
+          { icon: Upload, label: "CSV", color: "text-emerald-300" },
+          { icon: FileSpreadsheet, label: "Excel", color: "text-emerald-300" },
+          { icon: FileText, label: "PDF", color: "text-emerald-300" },
+          { icon: Image, label: "Screenshot", color: "text-emerald-300" },
+          { icon: Link, label: "Broker", color: "text-amber-300" },
+        ].map((m) => (
+          <span
+            key={m.label}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium transition-all duration-200 hover:bg-white/[0.06]",
+              m.color,
+            )}
+          >
+            <m.icon className="h-3 w-3" />
+            {m.label}
+          </span>
+        ))}
+      </div>
 
-        {!loading && isEmpty && (
-          <EmptyState
-            onCreate={() => setCreateOpen(true)}
-          />
-        )}
+      {/* Drag & drop zone + Body */}
+      <div className="relative flex flex-1 flex-col gap-3 rounded-xl border border-dashed border-emerald-400/20 bg-emerald-500/[0.03] p-4">
+        {/* Floating particles */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+          <div className="absolute -left-4 -top-4 h-20 w-20 rounded-full bg-emerald-400/10 blur-2xl animate-float-slow" />
+          <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-full bg-emerald-400/10 blur-2xl animate-float-slow" style={{ animationDelay: "2s" }} />
+        </div>
 
-        {!loading && !isEmpty && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus className="h-3.5 w-3.5" />
-                New portfolio
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMergeOpen(true)}
-                disabled={!canMerge}
-              >
-                <Merge className="h-3.5 w-3.5" />
-                Add to existing
-              </Button>
-              {/* Mobile-only actions */}
-              <div className="ml-auto flex items-center gap-1.5 md:hidden">
-                {canUndo && (
-                  <Button variant="ghost" size="sm" onClick={handleUndo}>
-                    <Undo2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+        <div className="relative flex flex-1 flex-col gap-3">
+          {loading && <LoadingState />}
+
+          {!loading && isEmpty && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2">
+              <Upload className="h-8 w-8 text-emerald-400/40" />
+              <p className="text-xs text-muted-foreground/70 text-center">
+                Drag & drop files or click to browse
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button
-                  variant="ghost"
                   size="sm"
-                  onClick={() => setHistoryOpen((v) => !v)}
+                  onClick={() => setCreateOpen(true)}
+                  className="gap-1.5"
                 >
-                  <History className="h-3.5 w-3.5" />
+                  <Plus className="h-3.5 w-3.5" />
+                  Create Portfolio
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <Link className="h-3.5 w-3.5" />
+                  Connect Broker
                 </Button>
               </div>
             </div>
-
-            <PortfolioList
-              portfolios={portfolios ?? []}
-              activeId={activeId ?? null}
-            />
-          </>
-        )}
-
-        <AnimatePresence>
-          {historyOpen && (
-            <motion.div
-              key="history"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <HistoryPanel
-                onClose={() => setHistoryOpen(false)}
-                entries={history ?? []}
-                onUndo={handleUndo}
-                canUndo={canUndo}
-              />
-            </motion.div>
           )}
-        </AnimatePresence>
+
+          {!loading && !isEmpty && (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" />
+                  New portfolio
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMergeOpen(true)}
+                  disabled={!canMerge}
+                >
+                  <Merge className="h-3.5 w-3.5" />
+                  Add to existing
+                </Button>
+                <div className="ml-auto flex items-center gap-1.5 md:hidden">
+                  {canUndo && (
+                    <Button variant="ghost" size="sm" onClick={handleUndo}>
+                      <Undo2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setHistoryOpen((v) => !v)}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              <PortfolioList
+                portfolios={portfolios ?? []}
+                activeId={activeId ?? null}
+              />
+            </>
+          )}
+
+          <AnimatePresence>
+            {historyOpen && (
+              <motion.div
+                key="history"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <HistoryPanel
+                  onClose={() => setHistoryOpen(false)}
+                  entries={history ?? []}
+                  onUndo={handleUndo}
+                  canUndo={canUndo}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      <div className="relative flex items-center justify-between border-t border-white/[0.04] pt-3 text-[11px] text-muted-foreground">
-        <span>
-          {activePortfolio
-            ? `Active: ${activePortfolio.name}`
-            : isEmpty
-              ? "No portfolio yet"
-              : "No active portfolio"}
-        </span>
-        <span className="hidden md:inline">
-          Local-only · Encrypted at rest by your browser
-        </span>
+      {/* Security badge */}
+      <div className="relative flex items-center gap-3 text-[10px] text-muted-foreground/60">
+        <div className="flex items-center gap-1">
+          <Shield className="h-3 w-3 text-emerald-400/60" />
+          <span>Local storage</span>
+        </div>
+        <span className="text-white/[0.04]">·</span>
+        <span>Encrypted at rest</span>
+        <span className="text-white/[0.04]">·</span>
+        <span className="hidden sm:inline">No data leaves your device</span>
       </div>
 
       <CreatePortfolioDialog

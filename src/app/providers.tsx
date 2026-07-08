@@ -2,11 +2,12 @@
 
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { AuthProvider } from "@/contexts/auth-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider delayDuration={200}>
-      {children}
+      <AuthProvider>{children}</AuthProvider>
       <Toaster
         position="top-right"
         theme="dark"

@@ -117,9 +117,7 @@ function NewsFilterBarBase({
   const [, startTransition] = React.useTransition();
 
   // Keep local input in sync when parent resets filters externally (e.g. Clear).
-  React.useEffect(() => {
-    setLocalQuery(state.query);
-  }, [state.query]);
+  React.useEffect(() => { setLocalQuery(state.query); }, [state.query]);
 
   const handleQueryChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

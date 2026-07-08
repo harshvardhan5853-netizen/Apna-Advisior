@@ -2,25 +2,14 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { PageShell } from "@/components/layout/page-shell";
 import { CorporateActionsCalendar } from "@/components/tools/corporate-actions-calendar";
 
 export default function CorporateActionsRoute() {
   return (
-    <div className="relative min-h-screen">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.15]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(16,185,129,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.12) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed -top-32 left-1/2 -z-10 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-violet-500/[0.08] blur-3xl"
-      />
-
+    <AuthGuard>
+    <PageShell orbColor="bg-violet-500/[0.08]">
       <main className="container relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:py-14">
         <header className="flex flex-col gap-4">
           <Link
@@ -46,6 +35,7 @@ export default function CorporateActionsRoute() {
           Local-only · Nothing leaves your device.
         </footer>
       </main>
-    </div>
+    </PageShell>
+    </AuthGuard>
   );
 }

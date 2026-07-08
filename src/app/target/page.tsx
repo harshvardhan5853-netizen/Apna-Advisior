@@ -3,25 +3,15 @@
 import Link from "next/link";
 import { ArrowLeft, Target } from "lucide-react";
 
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { PageShell } from "@/components/layout/page-shell";
 import { TargetView } from "@/components/target-portfolio/target-view";
 
 export default function TargetRoute() {
   return (
-    <div className="relative min-h-screen">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.15]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(16,185,129,0.12) 0 1px, transparent 1px 56px), repeating-linear-gradient(90deg, rgba(16,185,129,0.12) 0 1px, transparent 1px 56px)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed -top-32 left-1/2 -z-10 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-emerald-500/[0.08] blur-3xl"
-      />
-
-      <main className="container relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:py-14">
+    <AuthGuard>
+    <PageShell>
+      <main className="container relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:py-14 page-enter">
         <header className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <Link
@@ -55,6 +45,7 @@ export default function TargetRoute() {
           not investment advice.
         </footer>
       </main>
-    </div>
+    </PageShell>
+    </AuthGuard>
   );
 }

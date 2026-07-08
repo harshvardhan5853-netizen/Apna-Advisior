@@ -2,21 +2,15 @@
 
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { PageShell } from "@/components/layout/page-shell";
 import { OpportunityView } from "@/components/opportunity/opportunity-view";
 
 export default function OpportunitiesRoute() {
   return (
-    <div className="relative min-h-screen">
-      <div
-        className="pointer-events-none fixed inset-0 -z-20 opacity-[0.15]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(16,185,129,0.12) 0 1px, transparent 1px 56px), repeating-linear-gradient(90deg, rgba(16,185,129,0.12) 0 1px, transparent 1px 56px)",
-        }}
-      />
-      <div className="pointer-events-none fixed -top-32 left-1/2 -z-10 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-emerald-500/[0.08] blur-3xl" />
-
-      <main className="container relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:py-14">
+    <AuthGuard>
+    <PageShell>
+      <main className="container relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:py-14 page-enter">
         <header className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <Link
@@ -47,6 +41,7 @@ export default function OpportunitiesRoute() {
           Local-only · Not investment advice. Recommendations are model-generated — verify before acting.
         </footer>
       </main>
-    </div>
+    </PageShell>
+    </AuthGuard>
   );
 }

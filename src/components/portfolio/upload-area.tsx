@@ -5,9 +5,11 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
+  ChevronDown,
   ClipboardPaste,
   FileSpreadsheet,
   FileText,
+  HelpCircle,
   ImageIcon,
   Loader2,
   UploadCloud,
@@ -21,9 +23,7 @@ const ACCEPT = {
   "application/vnd.ms-excel": [".xls"],
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
   "application/pdf": [".pdf"],
-  "image/png": [".png"],
-  "image/jpeg": [".jpg", ".jpeg"],
-  "image/webp": [".webp"],
+  "image/*": [".png", ".jpg", ".jpeg", ".webp"],
 };
 
 interface UploadAreaProps {
@@ -43,6 +43,7 @@ export function UploadArea({
   processingLabel,
   progress,
 }: UploadAreaProps) {
+  const [showHints, setShowHints] = React.useState(false);
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     accept: ACCEPT,
     multiple: true,
@@ -106,7 +107,7 @@ export function UploadArea({
           processing && "pointer-events-none opacity-70",
         )}
       >
-        <input {...getInputProps()} />
+        <input {...getInputProps({ accept: "image/*,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,.xls,.xlsx,.pdf,.png,.jpg,.jpeg,.webp" })} />
 
         <AnimatePresence mode="wait">
           {processing ? (
@@ -184,17 +185,38 @@ export function UploadArea({
                 </Button>
                 <PasteHintButton />
                 {onOpenCamera && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenCamera();
-                    }}
-                  >
-                    <Camera className="h-4 w-4" /> Camera
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="hidden sm:inline-flex"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenCamera();
+                      }}
+                    >
+                      <Camera className="h-4 w-4" /> Camera
+                    </Button>
+                    <label
+                      className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.02] px-3 text-xs font-medium text-foreground transition-colors hover:bg-white/[0.06] sm:hidden"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                      Camera
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.length) {
+                            onFilesChange([...files, ...Array.from(e.target.files)]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </>
                 )}
               </div>
             </motion.div>
@@ -230,6 +252,54 @@ export function UploadArea({
           ))}
         </ul>
       )}
+
+      <div className="rounded-xl border border-white/[0.04] bg-white/[0.01] p-3 text-xs">
+        <button
+          type="button"
+          onClick={() => setShowHints(!showHints)}
+          className="flex w-full items-center justify-between text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <span className="flex items-center gap-1.5 font-medium">
+            <HelpCircle className="h-3.5 w-3.5 text-emerald-300" />
+            Broker-specific Import Guidelines
+          </span>
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showHints && "rotate-180")} />
+        </button>
+
+        <AnimatePresence>
+          {showHints && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3.5 grid grid-cols-1 gap-4 border-t border-white/[0.04] pt-3 md:grid-cols-2 text-[11px] text-muted-foreground/90">
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">Groww</h4>
+                  <p>• <b>Excel/CSV:</b> Download holdings Excel from Groww profile.</p>
+                  <p>• <b>Screenshot:</b> Clear capture of the main Holdings list showing stock names, average prices, and current values.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">Zerodha (Kite/Console)</h4>
+                  <p>• <b>Excel/CSV:</b> Export Excel report from Console &gt; Holdings.</p>
+                  <p>• <b>Screenshot:</b> Full capture of Kite Holdings web screen or mobile page.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">Angel One</h4>
+                  <p>• <b>PDF:</b> Upload transactional Ledger PDF report.</p>
+                  <p>• <b>Screenshot:</b> Screenshot of the portfolio holdings dashboard.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">Upstox &amp; Dhan</h4>
+                  <p>• <b>Files:</b> Upload holdings report PDF/Excel.</p>
+                  <p>• <b>Screenshot:</b> Full view of portfolio value and stock lists.</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -126,7 +126,10 @@ export function CreatePortfolioDialog({
       setHoldings(result.holdings);
       setWarnings(result.warnings);
       setDetectedSource(result.source);
-      if (result.holdings.length === 0) {
+      if (result.holdings.length > 0) {
+        const formattedBroker = result.source === "angelone" ? "Angel One" : result.source === "generic" ? "Generic/Custom" : result.source.charAt(0).toUpperCase() + result.source.slice(1);
+        toast.success(`Successfully parsed ${result.holdings.length} holdings. Detected broker: ${formattedBroker}.`);
+      } else {
         toast.error(
           "Couldn't extract any holdings. Try a clearer file or different format.",
         );

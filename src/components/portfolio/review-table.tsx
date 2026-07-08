@@ -136,10 +136,20 @@ export function ReviewTable({ holdings, onChange }: ReviewTableProps) {
                         updateRow(h.id, bag as Partial<Holding>);
                       }}
                     />
-                    {c.key === "stockName" && h.needsReview && (
-                      <Badge variant="warning" className="ml-2 inline-flex">
-                        <AlertTriangle className="h-3 w-3" /> Review
-                      </Badge>
+                    {c.key === "stockName" && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {h.needsReview ? (
+                          <Badge variant="warning" className="text-[10px] px-1.5 py-0 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" /> Needs Review ({(h.confidence * 100).toFixed(0)}%)
+                          </Badge>
+                        ) : (
+                          h.confidence < 1 && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-emerald-300">
+                              Auto-verified ({(h.confidence * 100).toFixed(0)}%)
+                            </Badge>
+                          )
+                        )}
+                      </div>
                     )}
                   </TableCell>
                 );

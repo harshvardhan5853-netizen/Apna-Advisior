@@ -1,5 +1,5 @@
 /**
- * Live quote types for the /portfolio/live view.
+ * Live quote types for the portfolio Live tab (Snapshot/Live toggle).
  * All prices are in INR. Missing values are `null` (not 0) so charts + math can distinguish
  * "unknown" from "zero".
  */

@@ -9,3 +9,5 @@ easyocr>=1.7
 pytesseract>=0.3.13
 PyMuPDF>=1.24
 pdfplumber>=0.11
+msoffcrypto-tool>=5.0
+openpyxl>=3.1

@@ -23,10 +23,6 @@ import {
 import { cn, formatCompactINR } from "@/lib/utils";
 import { PortfolioCard } from "@/components/portfolio/portfolio-card";
 import { usePortfolios, useActivePortfolio } from "@/hooks/use-portfolios";
-import {
-  useActiveTargetPortfolio,
-  useTargetPortfolios,
-} from "@/hooks/use-target-portfolios";
 
 interface CardMeta {
   id: string;
@@ -297,11 +293,6 @@ function DonutChart() {
 
 function TargetPortfolioTile({ meta }: { meta: CardMeta }) {
   const Icon = meta.icon;
-  const targets = useTargetPortfolios();
-  const activeTarget = useActiveTargetPortfolio();
-  const hasData = (targets?.length ?? 0) > 0;
-  const stockCount = activeTarget?.allocations.length ?? 0;
-  const targetName = activeTarget?.name;
 
   return (
     <Link
@@ -472,25 +463,6 @@ function AiChatBotTile({ meta }: { meta: CardMeta }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function UploadIllustration() {
-  return (
-    <svg
-      viewBox="0 0 200 200"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="pointer-events-none absolute -right-4 -top-4 h-40 w-40 opacity-10"
-      style={{ mixBlendMode: "screen" }}
-      aria-hidden
-    >
-      <path d="M100 40v80M70 70l30-30 30 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-emerald-300" />
-      <rect x="55" y="110" width="90" height="60" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-emerald-300/60" />
-      <path d="M75 130h50M75 145h35M75 160h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-emerald-300/40" />
-      <circle cx="160" cy="50" r="20" stroke="currentColor" strokeWidth="1" className="text-emerald-300/30" />
-      <path d="M155 50h10M160 45v10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-emerald-300/30" />
-    </svg>
   );
 }
 

@@ -45,9 +45,10 @@ export interface RunServerExtractOptions {
   bytes: Uint8Array;
   fileName: string;
   mimeType: string;
-  kind: "image" | "pdf";
+  kind: "image" | "pdf" | "xlsx";
   geminiApiKey?: string | null;
   geminiModel?: string;
+  password?: string;
 }
 
 export interface ServerExtractResponse {
@@ -94,8 +95,9 @@ export async function getExtractServiceStatus(): Promise<{
   return { ok: hasPython && hasScript, pythonPath, scriptPath, hasPython, hasScript };
 }
 
-function extensionFromInput(mime: string, fileName: string, kind: "image" | "pdf"): string {
+function extensionFromInput(mime: string, fileName: string, kind: "image" | "pdf" | "xlsx"): string {
   if (kind === "pdf") return ".pdf";
+  if (kind === "xlsx") return ".xlsx";
   const m = mime.toLowerCase();
   if (m.includes("png")) return ".png";
   if (m.includes("jpeg") || m.includes("jpg")) return ".jpg";
@@ -109,29 +111,142 @@ function extensionFromInput(mime: string, fileName: string, kind: "image" | "pdf
   return ".png";
 }
 
-function runPython(pythonPath: string, scriptPath: string, filePath: string, kind: string): Promise<{
+/** Hard timeout for extraction child processes. */
+export const EXTRACTION_TIMEOUT_MS = 60_000;
+
+function runPython(
+  pythonPath: string,
+  scriptPath: string,
+  filePath: string,
+  kind: string,
+  extraArgs: string[] = [],
+  stdinInput?: string,
+  signal?: AbortSignal,
+): Promise<{
   stdout: string;
   stderr: string;
   code: number | null;
 }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(pythonPath, [scriptPath, filePath, "--kind", kind], {
+    const args = [scriptPath, filePath, "--kind", kind, ...extraArgs];
+    const spawnOptions: Parameters<typeof spawn>[2] = {
       cwd: process.cwd(),
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
-    });
+    };
+    if (stdinInput !== undefined) {
+      spawnOptions.stdio = ["pipe", "pipe", "pipe"];
+    }
+    const child = spawn(pythonPath, args, spawnOptions);
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
-    child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
-    child.stderr.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
-    child.on("error", reject);
+    let settled = false;
+
+    function abortHandler() {
+      if (settled) return;
+      settled = true;
+      child.kill();
+      const err = new Error(signal?.aborted ? (signal.reason as string) || "Extraction cancelled" : "Extraction cancelled");
+      (err as NodeJS.ErrnoException).code = signal?.aborted && signal.reason === "timeout" ? "extraction-timeout" : "extraction-aborted";
+      reject(err);
+    }
+
+    signal?.addEventListener("abort", abortHandler, { once: true });
+
+    child.stdout?.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
+    child.stderr?.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
+    child.on("error", (err) => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", abortHandler);
+      reject(err);
+    });
     child.on("close", (code) => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", abortHandler);
       resolve({
         stdout: Buffer.concat(stdoutChunks).toString("utf-8"),
         stderr: Buffer.concat(stderrChunks).toString("utf-8"),
         code,
       });
     });
+    if (stdinInput !== undefined && child.stdin) {
+      child.stdin.write(stdinInput, "utf-8");
+      child.stdin.end();
+    }
   });
+}
+
+/**
+ * Helper to determine file extension for check/validation probes.
+ * Covers PDF, XLSX, and common image formats.
+ */
+function probeExtension(fileName: string): string {
+  const idx = fileName.lastIndexOf(".");
+  if (idx !== -1) {
+    const ext = fileName.slice(idx).toLowerCase();
+    if ([".pdf", ".xlsx", ".xls", ".xlsm", ".csv", ".png", ".jpg", ".jpeg", ".webp"].includes(ext)) return ext;
+  }
+  return ".bin";
+}
+
+export type CheckProtectionOptions =
+  | { checkProtection: true; checkPassword?: never; password?: never }
+  | { checkProtection?: never; checkPassword: true; password: string };
+
+/**
+ * Run the Python extraction script in check/validation mode.
+ * Used to probe whether a file is password-protected or validate a password.
+ */
+export async function runPythonCheck(
+  bytes: Uint8Array,
+  fileName: string,
+  _mimeType: string,
+  options: CheckProtectionOptions,
+  signal?: AbortSignal,
+): Promise<Record<string, unknown>> {
+  const status = await getExtractServiceStatus();
+  if (!status.hasPython) return { error: "python-unavailable" };
+  if (!status.hasScript) return { error: "script-missing" };
+
+  const ext = probeExtension(fileName);
+  let workDir: string | null = null;
+
+  try {
+    workDir = await mkdtemp(path.join(tmpdir(), "apna-check-"));
+    const filePath = path.join(workDir, `check${ext}`);
+    await writeFile(filePath, bytes);
+
+    const extraArgs: string[] = [];
+    if (options.checkProtection) {
+      extraArgs.push("--check-protection");
+    }
+
+    const stdinPassword = options.checkPassword ? options.password : undefined;
+    if (options.checkPassword) {
+      extraArgs.push("--password-stdin");
+    }
+
+    // Pass signal so child can be killed on abort/timeout
+    const result = await runPython(
+      status.pythonPath, status.scriptPath, filePath, "auto",
+      extraArgs, stdinPassword, signal,
+    );
+
+    if (result.code !== 0) {
+      return { error: result.stderr.trim() || result.stdout.trim() || `Python exited ${result.code}` };
+    }
+
+    try {
+      return JSON.parse(result.stdout) as Record<string, unknown>;
+    } catch {
+      return { error: "invalid-json", raw: result.stdout.slice(0, 1000) };
+    }
+  } finally {
+    if (workDir) {
+      rm(workDir, { recursive: true, force: true }).catch(() => {});
+    }
+  }
 }
 
 function normalizeBrokerSource(s: unknown): BrokerSource {
@@ -177,7 +292,10 @@ function mapPythonHoldings(raw: ExtractApiHolding[], defaultSource: BrokerSource
   });
 }
 
-export async function runServerExtract(options: RunServerExtractOptions): Promise<ServerExtractResponse> {
+export async function runServerExtract(
+  options: RunServerExtractOptions,
+  signal?: AbortSignal,
+): Promise<ServerExtractResponse> {
   const status = await getExtractServiceStatus();
   if (!status.hasPython) {
     throw Object.assign(new Error("python-unavailable"), {
@@ -200,7 +318,20 @@ export async function runServerExtract(options: RunServerExtractOptions): Promis
     const filePath = path.join(workDir, `upload${ext}`);
     await writeFile(filePath, options.bytes);
 
-    const result = await runPython(status.pythonPath, status.scriptPath, filePath, options.kind);
+    const extraArgs: string[] = [];
+    const stdinInput: string | undefined = options.password;
+    if (options.password) {
+      extraArgs.push("--extract-with-password");
+    }
+
+    // When password is provided the Python script uses --extract-with-password
+    // which auto-detects kind from extension, so pass "auto" for --kind.
+    const pyKind = options.password ? "auto" : options.kind;
+
+    const result = await runPython(
+      status.pythonPath, status.scriptPath, filePath, pyKind,
+      extraArgs, stdinInput, signal,
+    );
 
     if (result.code !== 0) {
       throw Object.assign(new Error("extract-failed"), {

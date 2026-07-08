@@ -1,10 +1,27 @@
 import type { ParseResult } from "@/types/portfolio";
 import { detectHeaderMap, rowToHolding } from "./column-map";
 
-export async function parseExcel(file: File): Promise<ParseResult> {
+/**
+ * Parse an Excel (.xls / .xlsx) file.
+ * When a password is provided, tries server-side extraction (Python msoffcrypto + openpyxl)
+ * first. Falls back to client-side SheetJS when no password or server unavailable.
+ */
+export async function parseExcel(file: File, password?: string): Promise<ParseResult> {
+  // When password is provided, server-side extraction is mandatory (SheetJS community
+  // cannot process encrypted XLSX files). Try server first.
+  if (password) {
+    try {
+      const { parseViaExtractApi } = await import("./extract-api");
+      const serverResult = await parseViaExtractApi(file, "xlsx", undefined, password);
+      if (serverResult) return serverResult;
+    } catch {
+      // Server unavailable — fall through to client-side attempt
+    }
+  }
+
   const XLSX = await import("xlsx");
   const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  const wb = XLSX.read(buf, { type: "array", password });
   const warnings: string[] = [];
 
   // Try each sheet; pick the one that yields the most holdings.

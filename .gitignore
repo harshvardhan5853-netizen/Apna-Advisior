@@ -45,6 +45,7 @@ yarn-error.log*
 .playwright-mcp/
 coverage/
 .eslintcache
+test-fixtures/
 
 # ─── Vercel ────────────────────────────────────────────────────────
 .vercel
@@ -54,3 +55,7 @@ launcher/
 
 # ─── Certificates ──────────────────────────────────────────────────
 *.pem
+
+# ─── Media & Data Files ────────────────────────────────────────────
+*.mp4
+*.xlsx

@@ -17,10 +17,14 @@ export interface ParseFilesProgress {
 /**
  * Parse a batch of user-uploaded files into a single flat list of holdings.
  * Errors from individual files bubble up as warnings — never fatal.
+ *
+ * @param passwords Optional map of file-index → document password for
+ *   password-protected PDFs / Excel files.
  */
 export async function parseFiles(
   files: File[],
   onProgress?: (p: ParseFilesProgress) => void,
+  passwords?: Map<number, string>,
 ): Promise<ParseResult> {
   const allHoldings: Holding[] = [];
   const warnings: string[] = [];
@@ -28,15 +32,16 @@ export async function parseFiles(
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+    const pw = passwords?.get(i);
     onProgress?.({ fileName: file.name, index: i, total: files.length, phase: "start" });
     try {
       let result: ParseResult;
       if (isCsvFile(file)) {
         result = await parseCsv(file);
       } else if (isExcelFile(file)) {
-        result = await parseExcel(file);
+        result = await parseExcel(file, pw);
       } else if (isPdfFile(file)) {
-        result = await parsePdf(file);
+        result = await parsePdf(file, pw);
       } else if (isImageFile(file)) {
         result = await parseImageOcr(file, (pct) =>
           onProgress?.({

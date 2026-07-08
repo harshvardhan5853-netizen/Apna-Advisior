@@ -29,9 +29,11 @@ import { UploadArea } from "./upload-area";
 import { CameraCapture } from "./camera-capture";
 import { ReviewTable } from "./review-table";
 import { ImportStatsRow } from "./import-stats";
+import { PasswordPromptDialog, type PasswordPromptFile, type PasswordState } from "./password-prompt-dialog";
+import { detectProtectedFiles, validatePassword } from "@/lib/parsers/detect-protected";
 import { formatCompactINR } from "@/lib/utils";
 
-type Step = "upload" | "review" | "confirm" | "success";
+type Step = "upload" | "password" | "review" | "confirm" | "success";
 
 interface CreatePortfolioDialogProps {
   open: boolean;
@@ -56,6 +58,14 @@ export function CreatePortfolioDialog({
     React.useState<Portfolio["origin"]["source"]>("generic");
   const [camera, setCamera] = React.useState(false);
   const [createdName, setCreatedName] = React.useState("");
+  const [, setShowPasswordPrompt] = React.useState(false);
+  const [passwordPromptFiles, setPasswordPromptFiles] = React.useState<PasswordPromptFile[]>([]);
+  const [passwordPromptIndex, setPasswordPromptIndex] = React.useState(0);
+  const [passwordPromptState, setPasswordPromptState] = React.useState<PasswordState>("idle");
+  const [passwordPromptError, setPasswordPromptError] = React.useState("");
+  const [passwordValue, setPasswordValue] = React.useState("");
+  const [usePasswordForAll, setUsePasswordForAll] = React.useState(false);
+  const passwordMapRef = React.useRef<Map<number, string>>(new Map());
 
   // Reset when dialog closes
   React.useEffect(() => {
@@ -73,6 +83,14 @@ export function CreatePortfolioDialog({
         setDetectedSource("generic");
         setCamera(false);
         setCreatedName("");
+        setShowPasswordPrompt(false);
+        setPasswordPromptFiles([]);
+        setPasswordPromptIndex(0);
+        setPasswordPromptState("idle");
+        setPasswordPromptError("");
+        setPasswordValue("");
+        setUsePasswordForAll(false);
+        passwordMapRef.current.clear();
       }, 250);
       return () => clearTimeout(t);
     }
@@ -99,51 +117,195 @@ export function CreatePortfolioDialog({
   const canContinueUpload =
     name.trim().length > 0 && files.length > 0 && !processing;
 
+  const doParse = React.useCallback(
+    async (passwordMap?: Map<number, string>) => {
+      setProcessing(true);
+      setProgress(0);
+      setProgressLabel("Reading files…");
+      try {
+        const result = await parseFiles(files, (p: ParseFilesProgress) => {
+          setProgressLabel(
+            p.phase === "progress"
+              ? `Extracting from ${p.fileName}…`
+              : p.phase === "start"
+                ? `Reading ${p.fileName}…`
+                : p.phase === "done"
+                  ? `Finished ${p.fileName}`
+                  : p.message ?? "…",
+          );
+          if (p.phase === "progress" && typeof p.pct === "number") {
+            const perFile = 1 / Math.max(p.total, 1);
+            setProgress(p.index * perFile + p.pct * perFile);
+          } else if (p.phase === "done") {
+            setProgress((p.index + 1) / Math.max(p.total, 1));
+          }
+        }, passwordMap);
+        setHoldings(result.holdings);
+        setWarnings(result.warnings);
+        setDetectedSource(result.source);
+        if (result.holdings.length > 0) {
+          const formattedBroker =
+            result.source === "angelone"
+              ? "Angel One"
+              : result.source === "generic"
+                ? "Generic/Custom"
+                : result.source.charAt(0).toUpperCase() + result.source.slice(1);
+          toast.success(
+            `Successfully parsed ${result.holdings.length} holdings. Detected broker: ${formattedBroker}.`,
+          );
+        } else {
+          toast.error(
+            "Couldn't extract any holdings. Try a clearer file or different format.",
+          );
+        }
+        setStep("review");
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Parse failed";
+        toast.error(msg);
+      } finally {
+        setProcessing(false);
+        setProgress(undefined);
+        setProgressLabel(undefined);
+      }
+    },
+    [files],
+  );
+
   const handleParse = async () => {
     if (!canContinueUpload) return;
+
+    // Client-side file size limit: 50MB
+    const LIMIT_MB = 50;
+    const largeFile = files.find((f) => f.size > LIMIT_MB * 1024 * 1024);
+    if (largeFile) {
+      toast.error(`"${largeFile.name}" exceeds the ${LIMIT_MB}MB limit. Please upload a smaller file.`);
+      return;
+    }
+
     setProcessing(true);
     setProgress(0);
-    setProgressLabel("Reading files…");
+    setProgressLabel("Checking files…");
+
     try {
-      const result = await parseFiles(files, (p: ParseFilesProgress) => {
-        setProgressLabel(
-          p.phase === "progress"
-            ? `Extracting from ${p.fileName}…`
-            : p.phase === "start"
-              ? `Reading ${p.fileName}…`
-              : p.phase === "done"
-                ? `Finished ${p.fileName}`
-                : p.message ?? "…",
-        );
-        if (p.phase === "progress" && typeof p.pct === "number") {
-          // Weight per-file progress across the batch
-          const perFile = 1 / Math.max(p.total, 1);
-          setProgress((p.index * perFile) + (p.pct * perFile));
-        } else if (p.phase === "done") {
-          setProgress((p.index + 1) / Math.max(p.total, 1));
-        }
+      const protectedResults = await detectProtectedFiles(files, (p) => {
+        setProgressLabel(`Checking ${p.fileName}…`);
+        setProgress((p.index + 1) / Math.max(p.total, 1));
       });
-      setHoldings(result.holdings);
-      setWarnings(result.warnings);
-      setDetectedSource(result.source);
-      if (result.holdings.length > 0) {
-        const formattedBroker = result.source === "angelone" ? "Angel One" : result.source === "generic" ? "Generic/Custom" : result.source.charAt(0).toUpperCase() + result.source.slice(1);
-        toast.success(`Successfully parsed ${result.holdings.length} holdings. Detected broker: ${formattedBroker}.`);
-      } else {
-        toast.error(
-          "Couldn't extract any holdings. Try a clearer file or different format.",
-        );
+
+      // Collect messages for corrupted / unsupported files (never ask for
+      // a password on these — they'll be surfaced as warnings during parse).
+      const nonPasswordIssues: string[] = [];
+      for (const r of protectedResults) {
+        if (r.status !== "protected" && r.status !== "ok" && r.error) {
+          nonPasswordIssues.push(r.error);
+        }
       }
-      setStep("review");
+
+      const protectedOnes = protectedResults.filter((r) => r.protected) as {
+        index: number;
+        file: File;
+      }[];
+
+      if (protectedOnes.length > 0) {
+        setPasswordPromptFiles(
+          protectedOnes.map((r) => ({
+            name: r.file.name,
+            index: r.index,
+          })),
+        );
+        setPasswordPromptIndex(0);
+        setPasswordPromptState("idle");
+        setPasswordPromptError("");
+        setPasswordValue("");
+        passwordMapRef.current.clear();
+        setCamera(false);
+        setStep("password");
+        setProcessing(false);
+        setProgress(undefined);
+        setProgressLabel(undefined);
+        // nonPasswordIssues will be surfaced after password flow completes
+        if (nonPasswordIssues.length > 0) {
+          for (const msg of nonPasswordIssues) {
+            toast.error(msg);
+          }
+        }
+      } else {
+        setProcessing(false);
+        setProgress(undefined);
+        setProgressLabel(undefined);
+        if (nonPasswordIssues.length > 0) {
+          for (const msg of nonPasswordIssues) {
+            toast.error(msg);
+          }
+        }
+        if (protectedResults.some((r) => r.status === "ok")) {
+          void doParse();
+        } else {
+          toast.error("None of the selected files could be processed.");
+        }
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Parse failed";
+      const msg = err instanceof Error ? err.message : "File check failed";
       toast.error(msg);
-    } finally {
       setProcessing(false);
       setProgress(undefined);
       setProgressLabel(undefined);
     }
   };
+
+  const handlePasswordSubmit = async (password: string) => {
+    const current = passwordPromptFiles[passwordPromptIndex];
+    if (!current || !password.trim()) return;
+
+    setPasswordPromptState("validating");
+
+    try {
+      const file = files[current.index];
+      const valid = await validatePassword(file, password);
+
+      if (valid) {
+        setPasswordPromptState("success");
+        passwordMapRef.current.set(current.index, password);
+
+        await new Promise((r) => setTimeout(r, 600));
+
+        if (usePasswordForAll) {
+          // Apply this password to every remaining protected file
+          for (let i = passwordPromptIndex + 1; i < passwordPromptFiles.length; i++) {
+            passwordMapRef.current.set(passwordPromptFiles[i].index, password);
+          }
+          setStep("upload");
+          setShowPasswordPrompt(false);
+          setPasswordPromptFiles([]);
+          setPasswordPromptIndex(0);
+          setUsePasswordForAll(false);
+          void doParse(passwordMapRef.current);
+        } else if (passwordPromptIndex < passwordPromptFiles.length - 1) {
+          setPasswordPromptIndex((i) => i + 1);
+          setPasswordPromptState("idle");
+          setPasswordPromptError("");
+        } else {
+          setStep("upload");
+          setShowPasswordPrompt(false);
+          setPasswordPromptFiles([]);
+          setPasswordPromptIndex(0);
+          void doParse(passwordMapRef.current);
+        }
+      } else {
+        setPasswordPromptState("error");
+        setPasswordPromptError(
+          "That password didn\u2019t work. Passwords are case-sensitive \u2014 double-check and try again.",
+        );
+      }
+    } catch {
+      setPasswordPromptState("error");
+      setPasswordPromptError(
+        "Could not validate password right now. Check your connection and try again.",
+      );
+    }
+  };
+
+
 
   const proceedFromReview = () => {
     if (holdings.length === 0) {
@@ -177,13 +339,13 @@ export function CreatePortfolioDialog({
     }
   };
 
-  const dialogTitle: Record<Step, string> = {
+  const dialogTitle: Partial<Record<Step, string>> = {
     upload: "Create a new portfolio",
     review: "Review extracted holdings",
     confirm: "Replace active portfolio?",
     success: "Portfolio created",
   };
-  const dialogDesc: Record<Step, string> = {
+  const dialogDesc: Partial<Record<Step, string>> = {
     upload:
       "Give your portfolio a name and drop in a broker export, PDF, or screenshot.",
     review:
@@ -197,6 +359,7 @@ export function CreatePortfolioDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent size={step === "review" ? "xl" : "lg"}>
+          {step !== "password" && (
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {step !== "upload" && step !== "success" && (
@@ -215,6 +378,7 @@ export function CreatePortfolioDialog({
             </DialogTitle>
             <DialogDescription>{dialogDesc[step]}</DialogDescription>
           </DialogHeader>
+          )}
 
           <AnimatePresence mode="wait">
             {step === "upload" && (
@@ -347,79 +511,106 @@ export function CreatePortfolioDialog({
             )}
           </AnimatePresence>
 
-          <DialogFooter>
-            {step === "upload" && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={processing}
-                >
-                  Cancel
+          {step !== "password" ? (
+            <DialogFooter>
+              {step === "upload" && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={processing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleParse}
+                    disabled={!canContinueUpload}
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Checking…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" /> Continue
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+              {step === "review" && (
+                <>
+                  <Button variant="outline" onClick={() => setStep("upload")}>
+                    Back
+                  </Button>
+                  <Button
+                    onClick={proceedFromReview}
+                    disabled={holdings.length === 0}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {activePortfolio
+                      ? "Continue"
+                      : `Create "${name.trim() || "Untitled"}"`}
+                  </Button>
+                </>
+              )}
+              {step === "confirm" && (
+                <>
+                  <Button variant="outline" onClick={() => setStep("review")}>
+                    No, go back
+                  </Button>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={processing}
+                    variant="destructive"
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Creating…
+                      </>
+                    ) : (
+                      <>Yes, replace and create</>
+                    )}
+                  </Button>
+                </>
+              )}
+              {step === "success" && (
+                <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+                  Done
                 </Button>
-                <Button
-                  onClick={handleParse}
-                  disabled={!canContinueUpload}
-                >
-                  {processing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Extracting…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" /> Continue
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-            {step === "review" && (
-              <>
-                <Button variant="outline" onClick={() => setStep("upload")}>
-                  Back
-                </Button>
-                <Button
-                  onClick={proceedFromReview}
-                  disabled={holdings.length === 0}
-                >
-                  <Plus className="h-4 w-4" />
-                  {activePortfolio
-                    ? "Continue"
-                    : `Create "${name.trim() || "Untitled"}"`}
-                </Button>
-              </>
-            )}
-            {step === "confirm" && (
-              <>
-                <Button variant="outline" onClick={() => setStep("review")}>
-                  No, go back
-                </Button>
-                <Button
-                  onClick={handleCreate}
-                  disabled={processing}
-                  variant="destructive"
-                >
-                  {processing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Creating…
-                    </>
-                  ) : (
-                    <>Yes, replace and create</>
-                  )}
-                </Button>
-              </>
-            )}
-            {step === "success" && (
-              <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-                Done
-              </Button>
-            )}
-          </DialogFooter>
+              )}
+            </DialogFooter>
+          ) : (
+            <div className="flex items-center justify-center py-6">
+              <PasswordPromptDialog
+                embedded
+                protectedFiles={passwordPromptFiles}
+                currentIndex={passwordPromptIndex}
+                state={passwordPromptState}
+                errorMessage={passwordPromptError || undefined}
+                password={passwordValue}
+                onPasswordChange={(v) => {
+                  setPasswordValue(v);
+                  setPasswordPromptError("");
+                }}
+                onSubmit={handlePasswordSubmit}
+                onCancel={() => {
+                  setPasswordPromptState("idle");
+                  setPasswordPromptError("");
+                  setPasswordValue("");
+                  passwordMapRef.current.clear();
+                  setStep("upload");
+                }}
+                totalProtected={passwordPromptFiles.length}
+                useForAll={usePasswordForAll}
+                onUseForAllChange={setUsePasswordForAll}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
-
       <CameraCapture
-        open={camera}
+        open={camera && step !== "password"}
         onOpenChange={setCamera}
         onCapture={(file) => setFiles((prev) => [...prev, file])}
       />

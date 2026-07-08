@@ -37,10 +37,6 @@
 - **🔐 Authentication** — Secure login with JWT + httpOnly cookies
 - **📱 Responsive** — Works seamlessly across desktop and mobile
 
-## 🖼️ Screenshots
-
-> *Screenshots coming soon.*
-
 ## 🧰 Tech Stack
 
 | Layer | Technology |
@@ -52,7 +48,7 @@
 | **Animations** | [Framer Motion](https://www.framer.com/motion/) |
 | **Icons** | [Lucide React](https://lucide.dev/) |
 | **Auth** | JWT with httpOnly cookies + bcrypt |
-| **Data Storage** | In-memory JSON file store (pluggable to any DB) |
+| **Data Storage** | [Dexie](https://dexie.org/) (IndexedDB) — local-first storage |
 | **OCR** | [Tesseract.js](https://tesseract.projectnaptha.com/) + Gemini AI |
 | **Live Quotes** | [Finnhub API](https://finnhub.io/) via Server-Sent Events |
 | **Charts** | [Recharts](https://recharts.org/) |
@@ -139,12 +135,11 @@ src/
 ├── contexts/               # React context providers (auth, etc.)
 ├── lib/                    # Shared utilities & business logic
 │   ├── auth-server.ts      # Server-side authentication
+│   ├── db.ts               # Dexie/IndexedDB storage layer
 │   ├── parsers/            # OCR & extract parsers
-│   ├── live-quotes/        # Real-time stock quotes
-│   └── stores/             # Data storage layer
-├── proxy.ts                # Next.js auth middleware (proxy)
-├── app.css                 # Global styles
-└── app.tsx                 # Root layout
+│   └── live-quotes/        # Real-time stock quotes
+├── app/globals.css         # Global styles
+└── app/layout.tsx          # Root layout
 ```
 
 ## 🧠 Usage
@@ -175,7 +170,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## 👤 Author
 
-**Your Name** — [@yourgithub](https://github.com/yourgithub)
+**Harsh Chaudhary**
 
 ---
 

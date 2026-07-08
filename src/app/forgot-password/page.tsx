@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   ArrowUpRight,
-  Lock,
   Mail,
   Target,
   CheckCircle,

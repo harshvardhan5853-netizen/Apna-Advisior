@@ -10,8 +10,10 @@ import {
  * PDF parsing:
  *   1. Primary: Python pdfplumber + PyMuPDF (+ scanned-page OCR) via /api/extract
  *   2. Fallback: pdfjs-dist in the browser
+ *
+ * @param password Optional — for password-protected PDFs.
  */
-export async function parsePdf(file: File): Promise<ParseResult> {
+export async function parsePdf(file: File, password?: string): Promise<ParseResult> {
   if (typeof window === "undefined") {
     return {
       holdings: [],
@@ -33,40 +35,44 @@ export async function parsePdf(file: File): Promise<ParseResult> {
     console.warn("Server PDF extraction failed, falling back to pdfjs:", err);
   }
 
-  return parsePdfBrowser(file);
+  return parsePdfBrowser(file, password);
 }
 
-async function parsePdfBrowser(file: File): Promise<ParseResult> {
+async function parsePdfBrowser(file: File, password?: string): Promise<ParseResult> {
   const pdfjs = await import("pdfjs-dist");
   const version = (pdfjs as { version: string }).version;
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
 
   const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const doc = await pdfjs.getDocument({ data: buf, password }).promise;
 
   const rowsText: string[] = [];
-  for (let p = 1; p <= doc.numPages; p++) {
-    const page = await doc.getPage(p);
-    const content = await page.getTextContent();
-    const yBuckets = new Map<number, { x: number; s: string }[]>();
-    for (const item of content.items as {
-      str: string;
-      transform: number[];
-    }[]) {
-      const y = Math.round(item.transform[5]);
-      const x = item.transform[4];
-      if (!yBuckets.has(y)) yBuckets.set(y, []);
-      yBuckets.get(y)!.push({ x, s: item.str });
+  try {
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const content = await page.getTextContent();
+      const yBuckets = new Map<number, { x: number; s: string }[]>();
+      for (const item of content.items as {
+        str: string;
+        transform: number[];
+      }[]) {
+        const y = Math.round(item.transform[5]);
+        const x = item.transform[4];
+        if (!yBuckets.has(y)) yBuckets.set(y, []);
+        yBuckets.get(y)!.push({ x, s: item.str });
+      }
+      const ordered = [...yBuckets.entries()].sort((a, b) => b[0] - a[0]);
+      for (const [, cells] of ordered) {
+        cells.sort((a, b) => a.x - b.x);
+        const line = cells
+          .map((c) => c.s.trim())
+          .filter(Boolean)
+          .join("  ");
+        if (line) rowsText.push(line);
+      }
     }
-    const ordered = [...yBuckets.entries()].sort((a, b) => b[0] - a[0]);
-    for (const [, cells] of ordered) {
-      cells.sort((a, b) => a.x - b.x);
-      const line = cells
-        .map((c) => c.s.trim())
-        .filter(Boolean)
-        .join("  ");
-      if (line) rowsText.push(line);
-    }
+  } finally {
+    (doc as unknown as { destroy: () => void }).destroy();
   }
 
   const holdings = extractHoldingsFromLines(rowsText, "generic");

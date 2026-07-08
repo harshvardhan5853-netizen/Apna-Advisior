@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -18,13 +17,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const ACCEPT = {
-  "text/csv": [".csv"],
-  "application/vnd.ms-excel": [".xls"],
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-  "application/pdf": [".pdf"],
-  "image/*": [".png", ".jpg", ".jpeg", ".webp"],
-};
+const ACCEPT_STR =
+  ".csv,.xls,.xlsx,.pdf,.png,.jpg,.jpeg,.webp";
 
 interface UploadAreaProps {
   files: File[];
@@ -43,16 +37,22 @@ export function UploadArea({
   processingLabel,
   progress,
 }: UploadAreaProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [showHints, setShowHints] = React.useState(false);
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-    accept: ACCEPT,
-    multiple: true,
-    noClick: true,
-    noKeyboard: true,
-    onDrop: (accepted) => {
-      if (accepted.length) onFilesChange([...files, ...accepted]);
+
+  const openFilePicker = React.useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files?.length) {
+        onFilesChange([...files, ...Array.from(e.target.files)]);
+        e.target.value = "";
+      }
     },
-  });
+    [files, onFilesChange],
+  );
 
   // Paste screenshots via Ctrl+V. Scope: while dialog/section is mounted.
   React.useEffect(() => {
@@ -91,23 +91,21 @@ export function UploadArea({
   return (
     <div className="flex flex-col gap-3">
       <div
-        {...getRootProps({
-          onClick: (e) => {
-            // Only open picker when clicking the empty pad, not children buttons.
-            const target = e.target as HTMLElement;
-            if (target.closest("[data-nofocus]")) return;
-            open();
-          },
-        })}
+        onClick={openFilePicker}
         className={cn(
           "group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center transition-all",
           "hover:border-emerald-400/40 hover:bg-emerald-400/[0.04]",
-          isDragActive &&
-            "border-emerald-400/60 bg-emerald-400/[0.06] ring-1 ring-emerald-400/30",
           processing && "pointer-events-none opacity-70",
         )}
       >
-        <input {...getInputProps({ accept: "image/*,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,.xls,.xlsx,.pdf,.png,.jpg,.jpeg,.webp" })} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPT_STR}
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
         <AnimatePresence mode="wait">
           {processing ? (
@@ -160,7 +158,7 @@ export function UploadArea({
               </div>
               <div className="max-w-xs">
                 <div className="font-display text-base font-semibold text-foreground">
-                  Drag &amp; Drop, Paste Screenshot, or Click to Upload
+                  Paste Screenshot or Click to Upload
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   We&apos;ll auto-detect Groww, Zerodha, Angel One, Upstox &amp; Dhan.
@@ -178,7 +176,7 @@ export function UploadArea({
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    open();
+                    openFilePicker();
                   }}
                 >
                   <UploadCloud className="h-4 w-4" /> Browse files

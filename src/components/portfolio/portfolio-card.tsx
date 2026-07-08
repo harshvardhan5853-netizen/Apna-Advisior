@@ -25,7 +25,6 @@ import {
 } from "@/hooks/use-portfolios";
 import { undoLastMerge } from "@/lib/portfolio-store";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "./empty-state";
 import { PortfolioList } from "./portfolio-list";
 import { CreatePortfolioDialog } from "./create-portfolio-dialog";
 import { AddToExistingDialog } from "./add-to-existing-dialog";
@@ -168,10 +167,14 @@ export function PortfolioCard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5"
+                  disabled
+                  className="gap-1.5 opacity-60 cursor-not-allowed"
                 >
                   <Link className="h-3.5 w-3.5" />
                   Connect Broker
+                  <span className="ml-0.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-amber-300">
+                    Soon
+                  </span>
                 </Button>
               </div>
             </div>

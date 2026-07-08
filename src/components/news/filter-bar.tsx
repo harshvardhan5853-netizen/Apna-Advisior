@@ -66,13 +66,7 @@ const CATEGORY_LABELS: Record<NewsCategory, string> = {
   other: "Other",
 };
 
-const SENTIMENT_LABELS: Record<NewsSentiment, string> = {
-  "very-positive": "Very positive",
-  positive: "Positive",
-  neutral: "Neutral",
-  negative: "Negative",
-  "very-negative": "Very negative",
-};
+
 
 const SOURCE_LABELS: Record<NewsSource, string> = {
   "google-news": "Google News",

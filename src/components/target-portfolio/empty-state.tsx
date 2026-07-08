@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { motion } from "framer-motion";
 import { Plus, Target, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";

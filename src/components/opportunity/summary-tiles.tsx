@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ArrowDownRight, ArrowUpRight, Minus, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus, Sparkles, TrendingUp } from "lucide-react";
 import type { OpportunityAnalysis, Recommendation } from "@/types/opportunity";
 import { cn } from "@/lib/utils";
 

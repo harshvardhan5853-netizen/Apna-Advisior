@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Building2, CheckCircle2, Clock, Layers, Newspaper, RefreshCw, XCircle } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle2, Clock, Newspaper, RefreshCw, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NewsSummary } from "@/types/news";
 

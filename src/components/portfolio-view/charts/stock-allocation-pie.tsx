@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { formatCompactINR, formatINR } from "@/lib/utils";
 import type { StockAllocation } from "@/types/portfolio";

@@ -6,7 +6,7 @@ import type { BrokerSource, Holding, ParseResult } from "@/types/portfolio";
 import { normalizeStockName, normalizeSymbol, uid } from "@/lib/utils";
 import { readNewsSettings } from "@/lib/news/settings";
 
-type ExtractKind = "image" | "pdf";
+type ExtractKind = "image" | "pdf" | "xlsx";
 
 interface ApiHolding {
   id?: string;
@@ -87,6 +87,7 @@ export async function parseViaExtractApi(
   file: File,
   kind: ExtractKind,
   onProgress?: (pct: number) => void,
+  password?: string,
 ): Promise<ParseResult | null> {
   if (typeof window === "undefined") return null;
 
@@ -95,6 +96,9 @@ export async function parseViaExtractApi(
   const form = new FormData();
   form.append("file", file, file.name || (kind === "pdf" ? "upload.pdf" : "upload.png"));
   form.append("kind", kind);
+  if (password) {
+    form.append("password", password);
+  }
   if (settings.geminiApiKey) {
     form.append("geminiApiKey", settings.geminiApiKey);
     form.append("geminiModel", settings.model);
@@ -102,7 +106,13 @@ export async function parseViaExtractApi(
 
   let res: Response;
   try {
-    res = await fetch("/api/extract", { method: "POST", body: form });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120_000);
+    try {
+      res = await fetch("/api/extract", { method: "POST", body: form, signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch {
     return null;
   }

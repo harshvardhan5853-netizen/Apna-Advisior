@@ -33,7 +33,7 @@
     "pdfjs-dist": "6.1.200",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "react-dropzone": "^15.0.0",
+
     "recharts": "^3.9.2",
     "rss-parser": "^3.13.0",
     "screener-india": "^1.0.1",

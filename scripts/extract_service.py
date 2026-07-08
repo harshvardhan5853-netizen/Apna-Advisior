@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import uuid
@@ -469,15 +470,18 @@ def extract_pdf_text_lines(path: Path) -> tuple[list[str], list[str]]:
         try:
             import fitz  # PyMuPDF
             doc = fitz.open(str(path))
-            pymupdf_lines: list[str] = []
-            for page in doc:
-                text = page.get_text("text") or ""
-                for ln in text.splitlines():
-                    ln = ln.strip()
-                    if ln:
-                        pymupdf_lines.append(ln)
-            if len(pymupdf_lines) > len(lines):
-                lines = pymupdf_lines
+            try:
+                pymupdf_lines: list[str] = []
+                for page in doc:
+                    text = page.get_text("text") or ""
+                    for ln in text.splitlines():
+                        ln = ln.strip()
+                        if ln:
+                            pymupdf_lines.append(ln)
+                if len(pymupdf_lines) > len(lines):
+                    lines = pymupdf_lines
+            finally:
+                doc.close()
         except Exception as e:
             warnings.append(f"PyMuPDF: {e}")
 
@@ -488,8 +492,11 @@ def pdf_needs_ocr(path: Path) -> bool:
     try:
         import fitz
         doc = fitz.open(str(path))
-        chars = sum(len((page.get_text() or "").strip()) for page in doc)
-        return chars < 80 * max(1, doc.page_count)
+        try:
+            chars = sum(len((page.get_text() or "").strip()) for page in doc)
+            return chars < 80 * max(1, doc.page_count)
+        finally:
+            doc.close()
     except Exception:
         return True
 
@@ -499,22 +506,25 @@ def ocr_pdf_pages(path: Path) -> tuple[str, list[str]]:
     warnings: list[str] = []
     texts: list[str] = []
     doc = fitz.open(str(path))
-    for i, page in enumerate(doc):
-        try:
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
-            tmp = path.parent / f"_page_{i}.png"
-            pix.save(str(tmp))
-            result = extract_image(tmp)
-            tmp.unlink(missing_ok=True)
-            if result.get("rawText"):
-                texts.append(result["rawText"])
-            elif result.get("holdings"):
-                texts.extend(
-                    f"{h.get('stockName','')} {h.get('quantity','')} {h.get('avgBuyPrice','')} {h.get('investedAmount','')}"
-                    for h in result["holdings"]
-                )
-        except Exception as e:
-            warnings.append(f"Page {i + 1} OCR failed: {e}")
+    try:
+        for i, page in enumerate(doc):
+            try:
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+                tmp = path.parent / f"_page_{i}.png"
+                pix.save(str(tmp))
+                result = extract_image(tmp)
+                tmp.unlink(missing_ok=True)
+                if result.get("rawText"):
+                    texts.append(result["rawText"])
+                elif result.get("holdings"):
+                    texts.extend(
+                        f"{h.get('stockName','')} {h.get('quantity','')} {h.get('avgBuyPrice','')} {h.get('investedAmount','')}"
+                        for h in result["holdings"]
+                    )
+            except Exception as e:
+                warnings.append(f"Page {i + 1} OCR failed: {e}")
+    finally:
+        doc.close()
     return "\n".join(texts), warnings
 
 
@@ -552,10 +562,366 @@ def extract_pdf(path: Path) -> dict[str, Any]:
 
 # ── entrypoint ───────────────────────────────────────────────────────────────
 
+OLE2_HEADER = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+
+
+def check_protection(path: Path) -> dict[str, Any]:
+    """Classify a file as normal / password-protected / corrupted / unsupported."""
+    ext = path.suffix.lower()
+
+    # ── PDF via PyMuPDF ──────────────────────────────────────────────────
+    if ext == ".pdf":
+        try:
+            import fitz
+        except ImportError:
+            return {"unsupported": True, "format": "pdf",
+                    "detail": "This file format is not supported (missing PyMuPDF)."}
+        try:
+            doc = fitz.open(str(path))
+            encrypted = doc.is_encrypted
+            doc.close()
+            if encrypted:
+                return {"passwordProtected": True, "format": "pdf"}
+            return {"passwordProtected": False, "format": "pdf"}
+        except Exception as e:
+            exc_name = type(e).__name__
+            if exc_name in ("FileDataError", "EmptyFileError"):
+                return {"corrupted": True, "format": "pdf",
+                        "detail": "This file appears to be corrupted or unreadable."}
+            return {"unsupported": True, "format": "pdf",
+                    "detail": "This file format is not supported."}
+
+    # ── Excel via zipfile / OLE2 marker ──────────────────────────────────
+    if ext in (".xlsx", ".xls", ".xlsm"):
+        try:
+            import zipfile
+            with zipfile.ZipFile(path) as z:
+                namelist_lower = [name.lower() for name in z.namelist()]
+                # Modern OOXML Standard Encryption embeds encrypted content
+                # markers inside a valid ZIP archive.
+                if "encryptedpackage" in namelist_lower or "encryptioninfo" in namelist_lower:
+                    return {"passwordProtected": True, "format": "xlsx"}
+                return {"passwordProtected": False, "format": "xlsx"}
+        except zipfile.BadZipFile:
+            try:
+                with open(path, "rb") as f:
+                    header = f.read(8)
+                if header == OLE2_HEADER:
+                    # OLE2 (CFB) container — .xls files use this natively;
+                    # .xlsx in this format indicates encryption.
+                    return {"passwordProtected": True, "format": "xlsx"}
+                return {"corrupted": True, "format": "xlsx",
+                        "detail": "This file appears to be corrupted or unreadable."}
+            except Exception:
+                return {"corrupted": True, "format": "xlsx",
+                        "detail": "This file appears to be corrupted or unreadable."}
+        except Exception:
+            return {"unsupported": True, "format": "xlsx",
+                    "detail": "This file format is not supported."}
+
+    # ── Other formats are never password-protected ───────────────────────
+    return {"passwordProtected": False, "format": "unknown"}
+
+
+def validate_password(path: Path, password: str) -> dict[str, Any]:
+    """Try opening a file with the given password."""
+    ext = path.suffix.lower()
+
+    if ext == ".pdf":
+        try:
+            import fitz
+            doc = fitz.open(str(path))
+            if doc.is_encrypted:
+                doc.close()
+                doc = fitz.open(str(path))
+                doc.authenticate(password)
+            if not doc.is_encrypted:
+                doc.close()
+                return {"passwordOk": True, "format": "pdf"}
+            doc.close()
+            return {"passwordOk": False, "format": "pdf"}
+        except Exception as e:
+            exc_name = type(e).__name__
+            if exc_name in ("FileDataError", "EmptyFileError"):
+                return {"passwordOk": False, "format": "pdf",
+                        "detail": "This file appears to be corrupted or unreadable."}
+            return {"passwordOk": False, "format": "pdf"}
+
+    if ext in (".xlsx", ".xls", ".xlsm"):
+        try:
+            import msoffcrypto
+            import tempfile
+            with open(path, "rb") as f:
+                office = msoffcrypto.OfficeFile(f)
+                office.load_key(password=password, verify_password=True)
+                # Fully decrypt to temp to confirm the key is valid
+                with tempfile.TemporaryFile() as decrypted:
+                    office.decrypt(decrypted)
+            return {"passwordOk": True, "format": "xlsx"}
+        except Exception as e:
+            exc_name = type(e).__name__
+            # msoffcrypto raises InvalidKeyError on wrong password
+            if exc_name == "InvalidKeyError" or "invalid key" in str(e).lower():
+                return {"passwordOk": False, "format": "xlsx"}
+            return {"passwordOk": False, "format": "xlsx",
+                    "detail": f"XLSX validation failed: {e}"}
+
+    return {"passwordOk": False, "format": "unknown"}
+
+
+# ── XLSX extraction (msoffcrypto + openpyxl) ─────────────────────────────
+
+
+def extract_xlsx(path: Path, password: str) -> dict[str, Any]:
+    """Decrypt (if needed) and extract holdings from an Excel file."""
+    warnings: list[str] = []
+    import tempfile
+    import os
+
+    # ── Step 1: decrypt if password-protected ─────────────────────────────
+    if password:
+        try:
+            import msoffcrypto
+            with open(path, "rb") as f_in:
+                office = msoffcrypto.OfficeFile(f_in)
+                office.load_key(password=password, verify_password=True)
+                tmp_fd, tmp_path_str = tempfile.mkstemp(suffix=".xlsx")
+                os.close(tmp_fd)
+                with open(tmp_path_str, "wb") as f_out:
+                    office.decrypt(f_out)
+                working_path = Path(tmp_path_str)
+                _cleanup_tmp = tmp_path_str
+        except Exception as e:
+            exc_name = type(e).__name__
+            if exc_name == "InvalidKeyError" or "invalid key" in str(e).lower():
+                return {"error": "wrong-password", "detail": "That password didn't work. Passwords are case-sensitive."}
+            try:
+                check = check_protection(path)
+                if check.get("corrupted"):
+                    return {"error": "corrupted", "detail": "This file appears to be corrupted or unreadable."}
+                if check.get("unsupported"):
+                    return {"error": "unsupported", "detail": "This file format is not supported."}
+                if check.get("passwordProtected"):
+                    return {"error": "wrong-password", "detail": "That password didn't work. Passwords are case-sensitive."}
+                working_path = path
+                _cleanup_tmp = None
+            except Exception:
+                return {"error": "decrypt-failed", "detail": f"Could not decrypt XLSX: {e}"}
+    else:
+        check = check_protection(path)
+        if check.get("corrupted"):
+            return {"error": "corrupted", "detail": "This file appears to be corrupted or unreadable."}
+        if check.get("unsupported"):
+            return {"error": "unsupported", "detail": "This file format is not supported."}
+        if check.get("passwordProtected"):
+            return {"error": "wrong-password", "detail": "This file is password-protected but no password was provided."}
+        working_path = path
+        _cleanup_tmp = None
+
+    # ── Step 2: read with openpyxl ───────────────────────────────────────
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(working_path, read_only=False, data_only=True)
+    except Exception as e:
+        if _cleanup_tmp:
+            os.unlink(_cleanup_tmp)
+        return {"error": "xlsx-read-failed", "detail": f"Could not read XLSX: {e}"}
+
+    if _cleanup_tmp:
+        try:
+            os.unlink(_cleanup_tmp)
+        except OSError:
+            pass
+
+    # ── Step 3: column-based holdings extraction ──────────────────────────
+    # Header synonyms (mirrors column-map.ts on the client side).
+    HEADER_SYNONYMS = {
+        "stockName": ["stock name", "stock", "instrument", "company", "company name",
+                       "security", "scrip", "scrip name", "name"],
+        "symbol": ["symbol", "ticker", "trading symbol", "tradingsymbol",
+                    "nse symbol", "bse symbol", "isin"],
+        "exchange": ["exchange", "exch", "segment"],
+        "quantity": ["qty", "quantity", "qty.", "holdings", "shares",
+                     "no. of shares", "no of shares", "total quantity"],
+        "avgBuyPrice": ["avg price", "average price", "avg. price", "avg cost",
+                        "avg buy price", "average buy price", "buy avg", "buy price",
+                        "cost price", "avg trading price"],
+        "currentPrice": ["ltp", "last traded price", "current price", "cmp",
+                         "market price", "close", "closing price"],
+        "investedAmount": ["invested", "invested amount", "investment",
+                           "cost value", "buy value", "amount invested", "invested value"],
+        "currentValue": ["current value", "market value", "cur. val", "cur value", "present value"],
+        "pnl": ["p&l", "pnl", "profit/loss", "gain/loss", "unrealized p&l", "net p&l", "overall gain/loss"],
+        "pnlPercent": ["p&l %", "pnl %", "net chg.", "% change", "returns %",
+                       "return %", "chg %", "overall gain/loss(%)"],
+    }
+
+    def norm_header(text: str) -> str:
+        return text.lower().replace("_", " ").replace(".", " ").strip()
+
+    def detect_columns(headers: list[str]) -> dict[str, int]:
+        """Return a dict like {stockName: 0, quantity: 4, ...} with -1 for missing."""
+        normed = [norm_header(h) for h in headers]
+        result: dict[str, int] = {}
+        for field, syns in HEADER_SYNONYMS.items():
+            found = -1
+            for i, h in enumerate(normed):
+                if h and any(s == h or s in h.split() for s in syns):
+                    found = i
+                    break
+            result[field] = found
+        return result
+
+    def safe_float(v) -> float:
+        if v is None:
+            return float("nan")
+        try:
+            return float(str(v).replace(",", "").strip())
+        except (ValueError, TypeError):
+            return float("nan")
+
+    def parse_sheet(ws) -> list[dict]:
+        """Extract holdings from a single worksheet using column detection."""
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            return []
+
+        # Find the first row that looks like a holdings header.
+        # Must have at least 2 known columns AND include stockName or symbol
+        # (summary/overview sheets may have invested/market value columns but
+        # no per-stock data, so they must be excluded).
+        header_idx = -1
+        header_map: dict[str, int] = {}
+        for i, row in enumerate(rows):
+            if not row:
+                continue
+            cell_strs = [str(c).strip() if c is not None else "" for c in row]
+            m = detect_columns(cell_strs)
+            known = sum(1 for v in m.values() if v >= 0)
+            has_stock = m.get("stockName", -1) >= 0 or m.get("symbol", -1) >= 0
+            if known >= 2 and has_stock:
+                header_idx = i
+                header_map = m
+                break
+
+        if header_idx < 0:
+            return []
+
+        holdings: list[dict] = []
+        for row in rows[header_idx + 1:]:
+            if not row:
+                continue
+            row_strs = [str(c).strip() if c is not None else "" for c in row]
+
+            # Skip empty rows and total rows.
+            if not any(c for c in row_strs):
+                continue
+            first = row_strs[0]
+            if first.lower() in ("total", "grand total", "subtotal", "sum"):
+                break
+
+            # Extract key fields.
+            stock_name = row_strs[header_map["stockName"]] if header_map.get("stockName", -1) >= 0 else ""
+            qty = safe_float(row[header_map["quantity"]]) if header_map.get("quantity", -1) >= 0 else float("nan")
+            avg = safe_float(row[header_map["avgBuyPrice"]]) if header_map.get("avgBuyPrice", -1) >= 0 else float("nan")
+            ltp = safe_float(row[header_map["currentPrice"]]) if header_map.get("currentPrice", -1) >= 0 else float("nan")
+            inv = safe_float(row[header_map["investedAmount"]]) if header_map.get("investedAmount", -1) >= 0 else float("nan")
+            cur_val = safe_float(row[header_map["currentValue"]]) if header_map.get("currentValue", -1) >= 0 else float("nan")
+            pnl = safe_float(row[header_map["pnl"]]) if header_map.get("pnl", -1) >= 0 else float("nan")
+            pnl_pct = safe_float(row[header_map["pnlPercent"]]) if header_map.get("pnlPercent", -1) >= 0 else float("nan")
+
+            # Must have stock name and at least one numeric to be a real holding.
+            if not stock_name or (not any(math.isfinite(n) for n in (qty, avg, ltp, inv, cur_val))):
+                continue
+
+            # Back-fill missing values.
+            if not math.isfinite(inv) and math.isfinite(qty) and math.isfinite(avg):
+                inv = qty * avg
+            if not math.isfinite(cur_val) and math.isfinite(qty) and math.isfinite(ltp):
+                cur_val = qty * ltp
+            if not math.isfinite(pnl) and math.isfinite(cur_val) and math.isfinite(inv):
+                pnl = cur_val - inv
+            if not math.isfinite(pnl_pct) and math.isfinite(pnl) and math.isfinite(inv) and inv > 0:
+                pnl_pct = pnl / inv
+
+            # Confidence.
+            essentials_present = sum(1 for n in (qty, avg, ltp) if math.isfinite(n))
+            confidence = 1.0 if essentials_present == 3 else (0.8 if essentials_present == 2 else 0.5)
+
+            import re
+            def normalize_symbol(name: str) -> str:
+                token = re.sub(r"[^A-Za-z0-9&-]", "", (name.split() or [""])[0]).upper()
+                return token[:20] if token else "UNKNOWN"
+
+            clean_name = re.sub(r"\s{2,}", " ", stock_name.strip())
+            holdings.append({
+                "stockName": clean_name,
+                "symbol": normalize_symbol(clean_name),
+                "exchange": "UNKNOWN",
+                "quantity": int(qty) if math.isfinite(qty) and qty == int(qty) else (qty if math.isfinite(qty) else 0),
+                "avgBuyPrice": round(avg, 4) if math.isfinite(avg) else 0,
+                "currentPrice": round(ltp, 4) if math.isfinite(ltp) else 0,
+                "investedAmount": round(inv, 2) if math.isfinite(inv) else 0,
+                "currentValue": round(cur_val, 2) if math.isfinite(cur_val) else 0,
+                "pnl": round(pnl, 2) if math.isfinite(pnl) else 0,
+                "pnlPercent": round(pnl_pct, 6) if math.isfinite(pnl_pct) else 0,
+                "confidence": round(confidence, 3),
+                "needsReview": confidence < 0.8,
+                "source": "generic",
+            })
+
+        return holdings
+
+    all_holdings: list[dict] = []
+    all_rows_text: list[str] = []
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        sheet_holdings = parse_sheet(ws)
+        all_holdings.extend(sheet_holdings)
+        # Also collect text rows for rawText / Gemini fallback.
+        for row in ws.iter_rows(values_only=True):
+            cells = [str(c).strip() if c is not None else "" for c in row]
+            line = "  ".join(c for c in cells if c)
+            if line:
+                all_rows_text.append(line)
+    wb.close()
+
+    raw_text = "\n".join(all_rows_text)
+    broker = detect_broker(raw_text)
+
+    if not all_holdings:
+        # Fall back to the text heuristic if column detection found nothing.
+        holdings, layout = parse_text_to_holdings(raw_text, broker)
+        if holdings:
+            warnings.append("XLSX parsed via text heuristic (column detection found no recognizable headers).")
+        else:
+            warnings.append("XLSX parsed but no holdings rows found — try Gemini or manual entry.")
+        return {
+            "source": broker,
+            "layout": layout,
+            "engine": "xlsx",
+            "warnings": warnings,
+            "holdings": holdings,
+            "rawText": raw_text[:12000],
+        }
+
+    return {
+        "source": broker,
+        "layout": "tabular",
+        "engine": "xlsx",
+        "warnings": warnings,
+        "holdings": all_holdings,
+        "rawText": raw_text[:12000],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Apna Advisor file extraction")
-    parser.add_argument("file", type=str, help="Path to image or PDF")
-    parser.add_argument("--kind", choices=["auto", "image", "pdf"], default="auto")
+    parser.add_argument("file", type=str, help="Path to file")
+    parser.add_argument("--kind", choices=["auto", "image", "pdf", "xlsx"], default="auto")
+    parser.add_argument("--check-protection", action="store_true", help="Only check if file is password-protected")
+    parser.add_argument("--password-stdin", action="store_true", help="Read password from stdin (secure)")
+    parser.add_argument("--extract-with-password", action="store_true", help="Extract XLSX with password from stdin")
     args = parser.parse_args()
 
     path = Path(args.file)
@@ -564,12 +930,46 @@ def main() -> int:
         return 1
 
     ext = path.suffix.lower()
+
+    # ── Protection check mode ──
+    if args.check_protection:
+        result = check_protection(path)
+        emit(result)
+        return 0
+
+    # ── Password validation mode (password via stdin) ──
+    if args.password_stdin:
+        password = sys.stdin.readline().strip()
+        result = validate_password(path, password)
+        password = None  # Clear from memory immediately
+        emit(result)
+        return 0
+
+    # ── XLSX extraction with password via stdin ──
+    if args.extract_with_password:
+        password = sys.stdin.readline().strip()
+        result = extract_xlsx(path, password)
+        password = None  # Clear from memory immediately
+        if "error" in result and result["error"] not in ("wrong-password",):
+            emit(result)
+            return 1
+        emit(result)
+        return 0
+
+    # ── Normal extraction mode ──
     kind = args.kind
     if kind == "auto":
-        kind = "pdf" if ext == ".pdf" else "image"
+        if ext in (".xlsx", ".xls", ".xlsm"):
+            kind = "xlsx"
+        elif ext == ".pdf":
+            kind = "pdf"
+        else:
+            kind = "image"
 
     try:
-        if kind == "pdf":
+        if kind == "xlsx":
+            result = extract_xlsx(path, "")
+        elif kind == "pdf":
             result = extract_pdf(path)
         else:
             result = extract_image(path)

@@ -220,6 +220,17 @@
     color: white;
   }
 
+  /* Hide browser-native password reveal toggle — we use our own eye toggle */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+  input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
   /* Custom scrollbars */
   ::-webkit-scrollbar {
     width: 10px;

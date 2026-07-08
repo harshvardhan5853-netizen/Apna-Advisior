@@ -5,6 +5,17 @@
 opencv-python-headless>=4.9
 numpy>=1.26
 Pillow>=10.4
+
+# ── Primary screenshot OCR (PaddleOCR 3.x, required for Python 3.13) ──
+# PaddleOCR 2.x cannot run on Python 3.13 (its inference engine depends on the
+# removed paddle.fluid API). 3.x is the only line with cp313 wheels. smart_extract.py
+# uses the 3.x PaddleOCR(lang=...).predict() API. NOTE: PaddleOCR 3.x still imports
+# the stdlib `imghdr` module removed in Python 3.13 — a vendored shim at
+# scripts/imghdr.py is injected into sys.modules at runtime by smart_extract.py, so
+# NO manual venv edits are needed (works on fresh installs, Docker, Railway, CI).
+paddlepaddle==3.3.0
+paddleocr>=3.0
+
 easyocr>=1.7
 pytesseract>=0.3.13
 PyMuPDF>=1.24

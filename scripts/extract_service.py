@@ -236,17 +236,21 @@ def extract_holdings_from_lines(lines: list[str], source: str) -> list[dict[str,
         parsed = [n for n in parsed if n == n]  # drop nan
         if len(parsed) < 3:
             continue
-        qty, avg, cur, invested, cur_val, pnl, pnl_pct = (parsed + [0] * 7)[:7]
+        qty, avg, cur, invested, cur_val, pnl = (parsed + [0] * 7)[:6]
         quantity = qty or 0
         avg_buy = avg or 0
         current_price = cur or 0
         invested_amt = invested if invested and invested > 0 else quantity * avg_buy
         current_value = cur_val if cur_val and cur_val > 0 else quantity * current_price
         pnl_val = pnl if pnl == pnl else current_value - invested_amt
+        # Do NOT bind pnl_pct from parsed[6]: in broker screenshot layouts the 7th
+        # number on the holding row is the Day's G/L amount (₹), not a percent, and
+        # the real percentages sit on the next line. Let holding_from_parts recompute
+        # pnl/invested, which is mathematically consistent and correct for every format.
         holdings.append(
             holding_from_parts(
                 name_part, quantity, avg_buy, current_price,
-                invested_amt, current_value, pnl_val, pnl_pct, source,
+                invested_amt, current_value, pnl_val, None, source,
             )
         )
     return holdings
@@ -382,6 +386,55 @@ def ocr_easyocr(img) -> tuple[str, str]:
     return text, "easyocr"
 
 
+def _debug_paddle(label: str, **fields: Any) -> None:
+    """Emit structured debug info to stderr so it never corrupts stdout JSON."""
+    import json as _json
+    sys.stderr.write(f"[paddle-debug] {label}: {_json.dumps(fields, ensure_ascii=False)}\n")
+    sys.stderr.flush()
+
+
+def ocr_paddle(original_path: Path) -> tuple[str, str, list[str]]:
+    """Primary screenshot OCR engine (PaddleOCR via smart_extract.py).
+
+    Returns (flagged_text, engine, plain_rows) where ``plain_rows`` are
+    pipe-free, space-joined cell strings ready for ``parse_text_to_holdings``.
+    The flagged ``text`` is kept for human-facing rawText output.
+
+    IMPORTANT: smart_extract.run_paddle_ocr decodes the file and performs its
+    own 2× upscale internally — exactly as the standalone CLI does. We must
+    pass it the ORIGINAL uploaded screenshot, NOT the binarized/CLAHE-preprocessed
+    image, otherwise PaddleOCR sees a degraded image the standalone path never
+    would (this was the integration regression).
+    """
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from smart_extract import run_paddle_ocr
+
+    _debug_paddle(
+        "input",
+        original_path=str(original_path),
+        exists=str(original_path.is_file()),
+    )
+
+    result = run_paddle_ocr(str(original_path), verbose=False)
+
+    flagged_text = result.get("text", "")
+    plain_rows = result.get("plain_rows", [])
+    raw_boxes = result.get("raw_boxes", [])
+    _debug_paddle(
+        "ocr",
+        layout=result.get("layout"),
+        n_flagged_text_chars=len(flagged_text),
+        n_plain_rows=len(plain_rows),
+        n_raw_boxes=len(raw_boxes),
+        raw_boxes=raw_boxes[:50],
+        plain_rows=plain_rows[:50],
+        text=flagged_text[:2000],
+        warnings=result.get("warnings", []),
+    )
+    return flagged_text, "paddleocr", plain_rows
+
+
 def extract_image(path: Path) -> dict[str, Any]:
     warnings: list[str] = []
     try:
@@ -389,6 +442,46 @@ def extract_image(path: Path) -> dict[str, Any]:
     except Exception as e:
         return {"error": "preprocess-failed", "detail": str(e), "holdings": [], "warnings": [str(e)]}
 
+    try:
+        import cv2
+        import numpy as np
+        _orig = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
+        _debug_paddle(
+            "image",
+            original_path=str(path),
+            dims=(_orig.shape[1], _orig.shape[0]) if _orig is not None else None,
+            note="original screenshot passed directly to PaddleOCR (matches standalone smart_extract.py)",
+        )
+    except Exception:
+        pass
+
+    # ── Primary engine: PaddleOCR (smart_extract.py) ────────────────────────
+    # NOTE: we pass the ORIGINAL screenshot path, not `processed` (the binarized
+    # CLAHE image). smart_extract.run_paddle_ocr decodes + 2× upscales internally,
+    # reproducing the standalone CLI exactly. Feeding it `processed` was the
+    # integration regression (degraded OCR on a thresholded image).
+    try:
+        flagged_text, engine, plain_rows = ocr_paddle(path)
+        # Feed CLEAN rows (no ⚠ markers) to the existing text heuristic.
+        lines = plain_rows if plain_rows else [flagged_text]
+        holdings, layout = parse_text_to_holdings("\n".join(lines))
+        raw_text = flagged_text
+        _debug_paddle(
+            "parse",
+            engine=engine,
+            layout=layout,
+            n_plain_rows=len(plain_rows),
+            n_holdings=len(holdings),
+            holdings=holdings,
+        )
+        if holdings:
+            return _finalize_image_result(raw_text, engine, layout, holdings, warnings)
+        # Primary engine produced no rows — fall through to legacy fallback.
+        warnings.append("PaddleOCR ran but found no holdings rows — falling back to legacy OCR.")
+    except Exception as e:
+        warnings.append(f"PaddleOCR failed: {e}")
+
+    # ── Legacy fallback: EasyOCR + Tesseract (kept, disabled as primary) ────
     candidates: list[tuple[str, str, list[dict[str, Any]]]] = []
 
     try:
@@ -426,6 +519,16 @@ def extract_image(path: Path) -> dict[str, Any]:
     except Exception:
         pass
 
+    return _finalize_image_result(raw_text, engine, layout, holdings, warnings)
+
+
+def _finalize_image_result(
+    raw_text: str,
+    engine: str,
+    layout: str,
+    holdings: list[dict[str, Any]],
+    warnings: list[str],
+) -> dict[str, Any]:
     broker = detect_broker(raw_text)
     if not holdings:
         warnings.append("OCR ran but no holdings rows detected — try Gemini or manual review.")

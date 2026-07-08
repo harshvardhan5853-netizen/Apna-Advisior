@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { DashboardHeader } from "./dashboard-header";
 import { CardGrid } from "./card-grid";
+import { PortfolioStatusCard } from "./portfolio-status-card";
 import { UserMenu } from "@/components/auth/user-menu";
 
 export function DashboardShell() {
@@ -58,7 +59,10 @@ export function DashboardShell() {
       <main className="container relative mx-auto flex max-w-7xl flex-col gap-10 py-10 md:py-14">
         <div className="flex items-start justify-between">
           <DashboardHeader />
-          <UserMenu />
+          <div className="flex flex-col items-end gap-6">
+            <UserMenu />
+            <PortfolioStatusCard />
+          </div>
         </div>
         <CardGrid />
         <footer className="pt-6 text-center text-xs text-muted-foreground/50">

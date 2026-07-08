@@ -11,6 +11,7 @@ import {
   Merge,
   Plus,
   Shield,
+  Settings,
   Undo2,
   Upload,
   Wallet,
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { PortfolioList } from "./portfolio-list";
 import { CreatePortfolioDialog } from "./create-portfolio-dialog";
 import { AddToExistingDialog } from "./add-to-existing-dialog";
+import { AiSettingsDialog } from "./ai-settings-dialog";
 
 export function PortfolioCard() {
   const portfolios = usePortfolios();
@@ -37,6 +39,7 @@ export function PortfolioCard() {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [mergeOpen, setMergeOpen] = React.useState(false);
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [aiSettingsOpen, setAiSettingsOpen] = React.useState(false);
 
   const loading = portfolios === undefined || activeId === undefined;
   const isEmpty = !loading && (portfolios?.length ?? 0) === 0;
@@ -92,7 +95,7 @@ export function PortfolioCard() {
           </div>
         </div>
 
-        <div className="hidden flex-wrap items-center gap-1.5 md:flex">
+        <div className="hidden flex-wrap items-center gap-1.5 pr-3.5 md:flex">
           {canUndo && (
             <Button
               variant="ghost"
@@ -112,6 +115,15 @@ export function PortfolioCard() {
           >
             <History className="h-3.5 w-3.5" />
             History
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAiSettingsOpen(true)}
+            title="AI Assistant settings"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Settings
           </Button>
         </div>
       </div>
@@ -209,6 +221,14 @@ export function PortfolioCard() {
                   >
                     <History className="h-3.5 w-3.5" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAiSettingsOpen(true)}
+                    title="AI Assistant settings"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
 
@@ -264,6 +284,7 @@ export function PortfolioCard() {
         portfolios={portfolios ?? []}
         activeId={activeId ?? null}
       />
+      <AiSettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
     </div>
   );
 }

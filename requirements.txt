@@ -1,0 +1,11 @@
+# Apna Advisor — Python extraction service (OCR + PDF)
+# Setup: py -m venv .venv && .venv\Scripts\pip install -r requirements.txt
+# Tesseract OCR binary must also be installed and on PATH (Windows: https://github.com/UB-Mannheim/tesseract/wiki)
+
+opencv-python-headless>=4.9
+numpy>=1.26
+Pillow>=10.4
+easyocr>=1.7
+pytesseract>=0.3.13
+PyMuPDF>=1.24
+pdfplumber>=0.11

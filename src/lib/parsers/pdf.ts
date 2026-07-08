@@ -7,18 +7,11 @@ import {
 } from "../utils";
 
 /**
- * PDF parsing strategy:
- *   1. Extract text items from each page via pdfjs-dist.
- *   2. Group items by their Y coordinate to reconstruct rows.
- *   3. On each row, hunt for a "STOCK ... NUM NUM NUM NUM ..." pattern and
- *      map columns positionally.
- *
- * This is intentionally forgiving — broker PDFs vary wildly. When the regex
- * pass fails we still return whatever text we found so the OCR pipeline
- * can be swapped in as a fallback.
+ * PDF parsing:
+ *   1. Primary: Python pdfplumber + PyMuPDF (+ scanned-page OCR) via /api/extract
+ *   2. Fallback: pdfjs-dist in the browser
  */
 export async function parsePdf(file: File): Promise<ParseResult> {
-  // pdfjs-dist is browser-only. Guard against SSR execution.
   if (typeof window === "undefined") {
     return {
       holdings: [],
@@ -27,8 +20,24 @@ export async function parsePdf(file: File): Promise<ParseResult> {
     };
   }
 
+  try {
+    const { parseViaExtractApi } = await import("./extract-api");
+    const apiResult = await parseViaExtractApi(file, "pdf");
+    if (apiResult && apiResult.holdings.length > 0) {
+      return apiResult;
+    }
+    if (apiResult && apiResult.warnings.length > 0) {
+      // Service ran but found nothing — still try browser fallback below.
+    }
+  } catch (err) {
+    console.warn("Server PDF extraction failed, falling back to pdfjs:", err);
+  }
+
+  return parsePdfBrowser(file);
+}
+
+async function parsePdfBrowser(file: File): Promise<ParseResult> {
   const pdfjs = await import("pdfjs-dist");
-  // Point at CDN worker matching the installed version.
   const version = (pdfjs as { version: string }).version;
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
 
@@ -39,7 +48,6 @@ export async function parsePdf(file: File): Promise<ParseResult> {
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
     const content = await page.getTextContent();
-    // Group items by Y (rounded) so we reconstruct visual rows.
     const yBuckets = new Map<number, { x: number; s: string }[]>();
     for (const item of content.items as {
       str: string;
@@ -50,7 +58,6 @@ export async function parsePdf(file: File): Promise<ParseResult> {
       if (!yBuckets.has(y)) yBuckets.set(y, []);
       yBuckets.get(y)!.push({ x, s: item.str });
     }
-    // Sort by Y desc (top of page first) and x asc within a row.
     const ordered = [...yBuckets.entries()].sort((a, b) => b[0] - a[0]);
     for (const [, cells] of ordered) {
       cells.sort((a, b) => a.x - b.x);
@@ -68,8 +75,10 @@ export async function parsePdf(file: File): Promise<ParseResult> {
     source: "generic",
     warnings:
       holdings.length === 0
-        ? ["Could not find holdings rows in PDF — try uploading a screenshot instead"]
-        : [],
+        ? [
+            "Could not find holdings in PDF. Install Python extraction (requirements.txt) or upload a screenshot.",
+          ]
+        : ["Used browser PDF parser — verify rows. For better results run: py -m venv .venv && pip install -r requirements.txt"],
   };
 }
 
@@ -87,7 +96,6 @@ export function extractHoldingsFromLines(
   for (const raw of lines) {
     const line = raw.replace(/\u00a0/g, " ").trim();
     if (!line) continue;
-    // Skip obvious header/footer rows.
     if (/^(stock|instrument|holdings|total|page|portfolio|summary)\b/i.test(line)) continue;
 
     const nums = line.match(numberRe) ?? [];
@@ -99,8 +107,6 @@ export function extractHoldingsFromLines(
     if (!/[A-Za-z]/.test(namePart)) continue;
 
     const parsedNums = nums.map(parseNumberLoose).filter((n) => Number.isFinite(n));
-    // Heuristic column order used by most broker exports:
-    //   qty  avgPrice  currentPrice  invested  currentValue  pnl  pnl%
     const [qty, avg, cur, invested, curVal, pnl, pnlPct] = parsedNums;
 
     const quantity = qty ?? 0;

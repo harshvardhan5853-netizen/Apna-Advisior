@@ -63,12 +63,13 @@ export async function parseImageOcr(
     };
   }
 
-  // Primary path is the Python RapidOCR service; Tesseract below is the fallback.
+  // Primary: Python OpenCV + EasyOCR/Tesseract (+ Gemini). Browser Tesseract is fallback.
   try {
-    const apiResult = await parseImageOcrViaApi(file, onProgress);
+    const { parseViaExtractApi } = await import("./extract-api");
+    const apiResult = await parseViaExtractApi(file, "image", onProgress);
     if (apiResult) return apiResult;
   } catch (err) {
-    console.warn("Server OCR failed, falling back to Tesseract:", err);
+    console.warn("Server extraction failed, falling back to browser Tesseract:", err);
   }
 
   onProgress?.(0.02);
@@ -138,125 +139,6 @@ export async function parseImageOcr(
   onProgress?.(1);
   void scale;
   return { holdings, source: broker, warnings };
-}
-
-/* ──────────────────────── server OCR (Python + RapidOCR) ─────────────────── */
-
-type ApiHolding = {
-  stockName?: string;
-  symbol?: string;
-  exchange?: string;
-  quantity?: number;
-  avgBuyPrice?: number;
-  currentPrice?: number;
-  investedAmount?: number;
-  currentValue?: number;
-  pnl?: number;
-  pnlPercent?: number;
-  confidence?: number;
-  needsReview?: boolean;
-  source?: string;
-};
-
-type ApiResponse = {
-  source?: string;
-  layout?: string;
-  warnings?: string[];
-  holdings?: ApiHolding[];
-  error?: string;
-  detail?: string;
-};
-
-async function parseImageOcrViaApi(
-  file: File,
-  onProgress?: (pct: number) => void,
-): Promise<ParseResult | null> {
-  onProgress?.(0.05);
-  const form = new FormData();
-  form.append("image", file, file.name || "upload.png");
-
-  let res: Response;
-  try {
-    res = await fetch("/api/ocr", { method: "POST", body: form });
-  } catch {
-    return null;
-  }
-
-  if (res.status === 503) return null;
-
-  onProgress?.(0.85);
-
-  let payload: ApiResponse;
-  try {
-    payload = (await res.json()) as ApiResponse;
-  } catch {
-    return null;
-  }
-
-  if (!res.ok || payload.error) return null;
-  if (!Array.isArray(payload.holdings)) return null;
-
-  const source = normalizeBrokerSource(payload.source);
-  const warnings: string[] = Array.isArray(payload.warnings)
-    ? payload.warnings.filter((w): w is string => typeof w === "string")
-    : [];
-
-  const holdings: Holding[] = payload.holdings.map((raw) => {
-    const rawSource = normalizeBrokerSource(raw.source ?? source);
-    const stockName = normalizeStockName(String(raw.stockName ?? ""));
-    const symbolBase = raw.symbol ? String(raw.symbol) : stockName.split(/\s+/)[0] ?? "";
-    return {
-      id: uid("h"),
-      stockName,
-      symbol: normalizeSymbol(symbolBase),
-      exchange: normalizeExchange(raw.exchange),
-      quantity: numberOrZero(raw.quantity),
-      avgBuyPrice: numberOrZero(raw.avgBuyPrice),
-      currentPrice: numberOrZero(raw.currentPrice),
-      investedAmount: numberOrZero(raw.investedAmount),
-      currentValue: numberOrZero(raw.currentValue),
-      pnl: numberOrZero(raw.pnl),
-      pnlPercent: numberOrZero(raw.pnlPercent),
-      confidence: clamp01(numberOrZero(raw.confidence)),
-      needsReview: Boolean(raw.needsReview),
-      source: rawSource,
-    };
-  });
-
-  if (holdings.length === 0) {
-    warnings.push(
-      "Server OCR ran but couldn't identify any holdings rows. Try a clearer screenshot or add rows manually.",
-    );
-  }
-
-  onProgress?.(1);
-  return { holdings, source, warnings };
-}
-
-function numberOrZero(v: unknown): number {
-  const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function clamp01(n: number): number {
-  if (!Number.isFinite(n)) return 0;
-  if (n < 0) return 0;
-  if (n > 1) return 1;
-  return n;
-}
-
-function normalizeBrokerSource(s: unknown): BrokerSource {
-  const t = String(s ?? "").toLowerCase();
-  if (t === "groww" || t === "zerodha" || t === "angelone" || t === "upstox" || t === "dhan" || t === "manual") {
-    return t;
-  }
-  return "generic";
-}
-
-function normalizeExchange(v: unknown): "NSE" | "BSE" | "UNKNOWN" {
-  const t = String(v ?? "").toUpperCase();
-  if (t === "NSE" || t === "BSE") return t;
-  return "UNKNOWN";
 }
 
 /* ─────────────────────────── image preprocessing ─────────────────────────── */

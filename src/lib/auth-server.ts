@@ -3,7 +3,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
 /* ─── File-based persistence (users only) ─── */
-const DATA_DIR = join(process.cwd(), ".auth");
+// Vercel serverless: only /tmp is writable; process.cwd()/.auth would fail with
+// "ENOENT: mkdir '/var/task/.auth'" because the function root is read-only.
+const DATA_DIR = process.env.VERCEL === "1" ? "/tmp/.auth" : join(process.cwd(), ".auth");
 const USERS_FILE = join(DATA_DIR, "users.json");
 
 function ensureDataDir(): void {

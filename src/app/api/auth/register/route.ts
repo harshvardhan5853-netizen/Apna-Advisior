@@ -1,58 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerUser, sanitizeUser } from "@/lib/auth-server";
+import { checkRateLimit, ipKey } from "@/lib/rate-limiter";
+import { registerSchema } from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
   try {
-    const { fullName, username, email, password } = await req.json();
-
-    if (!fullName || !username || !email || !password) {
+    // Rate limit: 3 registrations / hour per IP
+    const rl = checkRateLimit(`register:${ipKey(req)}`, { limit: 3, windowMs: 3_600_000 });
+    if (!rl.allowed) {
       return NextResponse.json(
-        { error: "All fields are required" },
+        { error: "Too many registration attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfter / 1000)) } },
+      );
+    }
+
+    const body = registerSchema.safeParse(await req.json());
+    if (!body.success) {
+      return NextResponse.json(
+        { error: body.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 },
       );
     }
 
-    if (fullName.length < 2) {
-      return NextResponse.json(
-        { error: "Full name must be at least 2 characters" },
-        { status: 400 },
-      );
-    }
-
-    if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-      return NextResponse.json(
-        { error: "Username must be 3+ characters (letters, numbers, underscores)" },
-        { status: 400 },
-      );
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email address" },
-        { status: 400 },
-      );
-    }
-
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
-        { status: 400 },
-      );
-    }
-
-    if (!/[A-Z]/.test(password)) {
-      return NextResponse.json(
-        { error: "Password must contain an uppercase letter" },
-        { status: 400 },
-      );
-    }
-
-    if (!/[0-9]/.test(password)) {
-      return NextResponse.json(
-        { error: "Password must contain a number" },
-        { status: 400 },
-      );
-    }
+    const { fullName, username, email, password } = body.data;
 
     const user = registerUser(fullName, username, email, password);
 

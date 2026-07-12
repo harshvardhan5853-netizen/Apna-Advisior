@@ -272,15 +272,7 @@ export default function LoginPage() {
                     </div>
                   </motion.div>
 
-                  {/* Forgot Password */}
-                  <motion.div variants={fadeUp} className="text-right -mt-1.5">
-                    <Link
-                      href="/forgot-password"
-                      className="text-[11px] font-medium text-white/30 hover:text-emerald-400 transition-colors duration-200"
-                    >
-                      Forgot password?
-                    </Link>
-                  </motion.div>
+
 
                   {/* Submit */}
                   <motion.div variants={fadeUp}>

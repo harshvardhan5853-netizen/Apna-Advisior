@@ -5,6 +5,7 @@
 import type { BrokerSource, Holding, ParseResult } from "@/types/portfolio";
 import { normalizeStockName, normalizeSymbol, uid } from "@/lib/utils";
 import { readNewsSettings } from "@/lib/news/settings";
+import { readAiExtractionSettings } from "@/lib/ai-extraction-settings";
 
 type ExtractKind = "image" | "pdf" | "xlsx";
 
@@ -92,16 +93,19 @@ export async function parseViaExtractApi(
   if (typeof window === "undefined") return null;
 
   onProgress?.(0.05);
-  const settings = readNewsSettings();
+  const aiSettings = readAiExtractionSettings();
+  const newsSettings = readNewsSettings();
+  const geminiApiKey = aiSettings.geminiApiKey || newsSettings.geminiApiKey || "";
+  const geminiModel = aiSettings.extractionModel || newsSettings.model || "gemini-2.5-flash";
   const form = new FormData();
   form.append("file", file, file.name || (kind === "pdf" ? "upload.pdf" : "upload.png"));
   form.append("kind", kind);
   if (password) {
     form.append("password", password);
   }
-  if (settings.geminiApiKey) {
-    form.append("geminiApiKey", settings.geminiApiKey);
-    form.append("geminiModel", settings.model);
+  if (geminiApiKey) {
+    form.append("geminiApiKey", geminiApiKey);
+    form.append("geminiModel", geminiModel);
   }
 
   let res: Response;
@@ -117,10 +121,6 @@ export async function parseViaExtractApi(
     return null;
   }
 
-  if (res.status === 503) return null;
-
-  onProgress?.(0.85);
-
   let payload: ApiResponse;
   try {
     payload = (await res.json()) as ApiResponse;
@@ -128,8 +128,24 @@ export async function parseViaExtractApi(
     return null;
   }
 
-  if (!res.ok || payload.error) return null;
-  if (!Array.isArray(payload.holdings)) return null;
+  if (!res.ok || payload.error) {
+    const errMsg = payload.detail ?? payload.error ?? "Extraction failed on server.";
+    return {
+      holdings: [],
+      source: "generic",
+      warnings: [errMsg],
+    };
+  }
+
+  if (!Array.isArray(payload.holdings)) {
+    return {
+      holdings: [],
+      source: "generic",
+      warnings: ["Server returned unexpected data."],
+    };
+  }
+
+  onProgress?.(0.85);
 
   const source = normalizeBrokerSource(payload.source);
   const warnings: string[] = Array.isArray(payload.warnings)

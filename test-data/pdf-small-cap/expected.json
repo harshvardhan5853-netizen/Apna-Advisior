@@ -1,0 +1,40 @@
+{
+  "holdings": [
+    {
+      "symbol": "MARUTI",
+      "stockName": "Maruti Suzuki",
+      "quantity": 10,
+      "avgBuyPrice": 9500,
+      "investedAmount": 95000,
+      "currentValue": 101000,
+      "pnl": 6000,
+      "pnlPercent": 6.32,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "HCLTECH",
+      "stockName": "HCL Technologies",
+      "quantity": 55,
+      "avgBuyPrice": 1200,
+      "investedAmount": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "SBIN",
+      "stockName": "State Bank of India",
+      "quantity": 120,
+      "avgBuyPrice": 580,
+      "investedAmount": 69600,
+      "currentValue": 74400,
+      "pnl": 4800,
+      "pnlPercent": 6.9,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

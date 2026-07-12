@@ -1,0 +1,12 @@
+Single Holding
+==============
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+ICICIBANK | ICICI Bank | 100 | 890 | 89000 | 95000 | 6000 | 6.74
+---
+Total Invested: 89000
+Total Value: 95000
+Total P&L: 6000
+-- End --

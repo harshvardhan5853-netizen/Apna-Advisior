@@ -2,8 +2,8 @@ import type { Holding, ParseResult } from "@/types/portfolio";
 import { isCsvFile, isExcelFile, isImageFile, isPdfFile } from "../utils";
 import { parseCsv } from "./csv";
 import { parseExcel } from "./excel";
-import { parseImageOcr } from "./ocr";
 import { parsePdf } from "./pdf";
+import { parseViaExtractApi } from "./extract-api";
 
 export interface ParseFilesProgress {
   fileName: string;
@@ -43,7 +43,8 @@ export async function parseFiles(
       } else if (isPdfFile(file)) {
         result = await parsePdf(file, pw);
       } else if (isImageFile(file)) {
-        result = await parseImageOcr(file, (pct) =>
+        // Server-side extraction (Gemini Vision → PaddleOCR fallback)
+        const serverResult = await parseViaExtractApi(file, "image", (pct) =>
           onProgress?.({
             fileName: file.name,
             index: i,
@@ -52,6 +53,11 @@ export async function parseFiles(
             pct,
           }),
         );
+        if (serverResult) {
+          result = serverResult;
+        } else {
+          throw new Error("Extraction service unavailable. Check that Python is configured.");
+        }
       } else {
         warnings.push(`Unsupported file type: ${file.name}`);
         onProgress?.({
@@ -88,4 +94,4 @@ export async function parseFiles(
   return { holdings: allHoldings, source: dominantSource, warnings };
 }
 
-export { parseCsv, parseExcel, parsePdf, parseImageOcr };
+export { parseCsv, parseExcel, parsePdf };

@@ -235,4 +235,16 @@ export function lookupStock(symbol: string | null | undefined, stockName?: strin
   return null;
 }
 
+// ── ETF symbols (not in the main stock list) ──
+export const ETF_SYMBOLS = [
+  "NIFTYBEES", "JUNIORBEES", "BANKBEES", "GOLDBEES", "SILVERBEES",
+  "LIQUIDBEES", "MOM50", "ALPHABEES", "NIF100BEES", "CPSEETF",
+] as const;
+
+/** Complete set of all known NSE symbols (stocks + ETFs). */
+export const KNOWN_SYMBOLS = new Set<string>([
+  ...STOCKS.map((s) => s.symbol),
+  ...ETF_SYMBOLS,
+]);
+
 export const NSE_STATIC_COUNT = STOCKS.length;

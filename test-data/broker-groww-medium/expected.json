@@ -1,0 +1,76 @@
+{
+  "holdings": [
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "stockName": "Bharti Airtel",
+      "quantity": 40,
+      "avgBuyPrice": 1050,
+      "investedAmount": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "INFY",
+      "stockName": "Infosys",
+      "quantity": 60,
+      "avgBuyPrice": 1380,
+      "investedAmount": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "SBIN",
+      "stockName": "State Bank of India",
+      "quantity": 120,
+      "avgBuyPrice": 580,
+      "investedAmount": 69600,
+      "currentValue": 74400,
+      "pnl": 4800,
+      "pnlPercent": 6.9,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "HDFCBANK",
+      "stockName": "HDFC Bank",
+      "quantity": 80,
+      "avgBuyPrice": 1520,
+      "investedAmount": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "WIPRO",
+      "stockName": "Wipro",
+      "quantity": 90,
+      "avgBuyPrice": 430,
+      "investedAmount": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

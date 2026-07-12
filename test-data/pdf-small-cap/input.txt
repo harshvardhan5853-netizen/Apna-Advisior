@@ -1,0 +1,14 @@
+Small Holdings
+==============
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+MARUTI | Maruti Suzuki | 10 | 9500 | 95000 | 101000 | 6000 | 6.32
+HCLTECH | HCL Technologies | 55 | 1200 | 66000 | 70400 | 4400 | 6.67
+SBIN | State Bank of India | 120 | 580 | 69600 | 74400 | 4800 | 6.9
+---
+Total Invested: 230600
+Total Value: 245800
+Total P&L: 15200
+-- End --

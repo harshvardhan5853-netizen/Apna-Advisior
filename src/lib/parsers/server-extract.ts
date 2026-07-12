@@ -9,7 +9,9 @@ import path from "node:path";
 import { constants } from "node:fs";
 import type { BrokerSource, Holding } from "@/types/portfolio";
 import { normalizeStockName, normalizeSymbol, uid } from "@/lib/utils";
-import { extractHoldingsWithGemini } from "./gemini-extract";
+import { extractHoldingsFromText } from "./gemini-extract";
+import { extractHoldingsFromImage } from "@/lib/extractors/gemini-vision-extractor";
+import type { VisionHolding } from "@/lib/extractors/gemini-vision-extractor";
 
 export const EXTRACT_SCRIPT = "extract_service.py";
 
@@ -111,8 +113,8 @@ function extensionFromInput(mime: string, fileName: string, kind: "image" | "pdf
   return ".png";
 }
 
-/** Hard timeout for extraction child processes. */
-export const EXTRACTION_TIMEOUT_MS = 60_000;
+/** Hard timeout for extraction child processes. PaddleOCR model loading + OCR takes 30-90s on first call. */
+export const EXTRACTION_TIMEOUT_MS = 180_000;
 
 function runPython(
   pythonPath: string,
@@ -296,6 +298,59 @@ export async function runServerExtract(
   options: RunServerExtractOptions,
   signal?: AbortSignal,
 ): Promise<ServerExtractResponse> {
+  // Gemini Vision gate (images only; runs before Python check so Vision can succeed without Python)
+  if (options.kind === "image") {
+    const visionKey = options.geminiApiKey?.trim() ?? "";
+    if (visionKey.length >= 20) {
+      const visionResult = await extractHoldingsFromImage(
+        options.bytes,
+        options.mimeType,
+        visionKey,
+        options.geminiModel,
+      );
+      const hasError = "error" in visionResult;
+      if (
+        !hasError &&
+        visionResult.holdings.length > 0 &&
+        visionResult.confidence >= 60
+      ) {
+        // VisionHolding has raw Gemini field names (averagePrice, companyName, etc.)
+        // Map to Holding format (avgBuyPrice, stockName, etc.)
+        const broker = normalizeBrokerSource(visionResult.broker ?? "generic");
+        const warnings = [...visionResult.warnings];
+        const confidence01 = clamp01(visionResult.confidence / 100);
+        const holdings: Holding[] = visionResult.holdings.map((h: VisionHolding) => {
+          const stockName = h.companyName ? normalizeStockName(h.companyName) : normalizeStockName(h.symbol);
+          return {
+            id: uid("h"),
+            stockName,
+            symbol: normalizeSymbol(h.symbol),
+            exchange: "UNKNOWN" as const,
+            quantity: numberOrZero(h.quantity),
+            avgBuyPrice: numberOrZero(h.averagePrice),
+            currentPrice: numberOrZero(h.currentPrice),
+            investedAmount: numberOrZero(h.investedAmount),
+            currentValue: numberOrZero(h.currentValue),
+            pnl: numberOrZero(h.pnl),
+            pnlPercent: 0,
+            confidence: confidence01,
+            needsReview: visionResult.confidence < 80,
+            source: broker,
+          };
+        });
+        return {
+          source: broker,
+          warnings,
+          holdings,
+          engine: "gemini-vision",
+          geminiUsed: true,
+        };
+      }
+      // Vision failed or low confidence — fall through to PaddleOCR
+    }
+  }
+
+  // Python extraction path
   const status = await getExtractServiceStatus();
   if (!status.hasPython) {
     throw Object.assign(new Error("python-unavailable"), {
@@ -374,7 +429,7 @@ export async function runServerExtract(
 
     if (needsGemini) {
       try {
-        const gemini = await extractHoldingsWithGemini(rawText, apiKey, options.geminiModel);
+        const gemini = await extractHoldingsFromText(rawText, apiKey, options.geminiModel);
         if (gemini.holdings.length > 0) {
           holdings = gemini.holdings;
           geminiUsed = true;
@@ -387,7 +442,7 @@ export async function runServerExtract(
       }
     } else if (holdings.length === 0 && rawText.length > 40 && apiKey.length < 20) {
       warnings.push(
-        "Add a Gemini API key in News settings for AI-assisted extraction when OCR/PDF parsing finds no rows.",
+        "Add a Gemini API key in AI Extraction Settings for AI-assisted screenshot extraction.",
       );
     }
 

@@ -1,0 +1,21 @@
+Complete Portfolio
+==================
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+SUNPHARMA | Sun Pharmaceutical | 70 | 880 | 61600 | 64400 | 2800 | 4.55
+TCS | Tata Consultancy Services | 20 | 3450 | 69000 | 72400 | 3400 | 4.93
+KOTAKBANK | Kotak Mahindra Bank | 45 | 1750 | 78750 | 81900 | 3150 | 4
+SBIN | State Bank of India | 120 | 580 | 69600 | 74400 | 4800 | 6.9
+ICICIBANK | ICICI Bank | 100 | 890 | 89000 | 95000 | 6000 | 6.74
+TATAMOTORS | Tata Motors | 150 | 520 | 78000 | 84000 | 6000 | 7.69
+BHARTIARTL | Bharti Airtel | 40 | 1050 | 42000 | 44800 | 2800 | 6.67
+NTPC | NTPC | 180 | 210 | 37800 | 43200 | 5400 | 14.29
+RELIANCE | Reliance Industries | 50 | 2450 | 122500 | 129000 | 6500 | 5.31
+TITAN | Titan Company | 25 | 2800 | 70000 | 77500 | 7500 | 10.71
+---
+Total Invested: 718250
+Total Value: 766600
+Total P&L: 48350
+-- End --

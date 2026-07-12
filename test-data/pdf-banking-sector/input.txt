@@ -1,0 +1,15 @@
+Banking Portfolio
+=================
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+RELIANCE | Reliance Industries | 50 | 2450 | 122500 | 129000 | 6500 | 5.31
+TCS | Tata Consultancy Services | 20 | 3450 | 69000 | 72400 | 3400 | 4.93
+HDFCBANK | HDFC Bank | 80 | 1520 | 121600 | 134400 | 12800 | 10.53
+BHARTIARTL | Bharti Airtel | 40 | 1050 | 42000 | 44800 | 2800 | 6.67
+---
+Total Invested: 355100
+Total Value: 380600
+Total P&L: 25500
+-- End --

@@ -1,0 +1,124 @@
+{
+  "holdings": [
+    {
+      "symbol": "ICICI",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "HDFC",
+      "stockName": "HDFC Bank",
+      "quantity": 80,
+      "avgBuyPrice": 1520,
+      "investedAmount": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "INFOSYS",
+      "stockName": "Infosys",
+      "quantity": 60,
+      "avgBuyPrice": 1380,
+      "investedAmount": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "ITC",
+      "stockName": "ITC",
+      "quantity": 200,
+      "avgBuyPrice": 380,
+      "investedAmount": 76000,
+      "currentValue": 82000,
+      "pnl": 6000,
+      "pnlPercent": 7.89,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "WIPRO",
+      "stockName": "Wipro",
+      "quantity": 90,
+      "avgBuyPrice": 430,
+      "investedAmount": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "NTPC",
+      "stockName": "NTPC",
+      "quantity": 180,
+      "avgBuyPrice": 210,
+      "investedAmount": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "TITAN",
+      "stockName": "Titan Company",
+      "quantity": 25,
+      "avgBuyPrice": 2800,
+      "investedAmount": 70000,
+      "currentValue": 77500,
+      "pnl": 7500,
+      "pnlPercent": 10.71,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "TATA",
+      "stockName": "Tata Motors",
+      "quantity": 150,
+      "avgBuyPrice": 520,
+      "investedAmount": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "HCL",
+      "stockName": "HCL Technologies",
+      "quantity": 55,
+      "avgBuyPrice": 1200,
+      "investedAmount": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67,
+      "confidence": 0.8,
+      "needsReview": false
+    }
+  ]
+}

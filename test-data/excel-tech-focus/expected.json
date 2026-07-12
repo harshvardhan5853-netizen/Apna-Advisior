@@ -1,0 +1,88 @@
+{
+  "holdings": [
+    {
+      "symbol": "TATA",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "BHARTI",
+      "stockName": "Bharti Airtel",
+      "quantity": 40,
+      "avgBuyPrice": 1050,
+      "investedAmount": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "MARUTI",
+      "stockName": "Maruti Suzuki",
+      "quantity": 10,
+      "avgBuyPrice": 9500,
+      "investedAmount": 95000,
+      "currentValue": 101000,
+      "pnl": 6000,
+      "pnlPercent": 6.32,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "INFOSYS",
+      "stockName": "Infosys",
+      "quantity": 60,
+      "avgBuyPrice": 1380,
+      "investedAmount": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "ITC",
+      "stockName": "ITC",
+      "quantity": 200,
+      "avgBuyPrice": 380,
+      "investedAmount": 76000,
+      "currentValue": 82000,
+      "pnl": 6000,
+      "pnlPercent": 7.89,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "MAHINDRA",
+      "stockName": "Mahindra & Mahindra",
+      "quantity": 35,
+      "avgBuyPrice": 1550,
+      "investedAmount": 54250,
+      "currentValue": 58800,
+      "pnl": 4550,
+      "pnlPercent": 8.39,
+      "confidence": 0.8,
+      "needsReview": false
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "holdings": [
+    {
+      "symbol": "HDFCBANK",
+      "stockName": "HDFC Bank",
+      "quantity": 80,
+      "avgBuyPrice": 1520,
+      "investedAmount": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "NTPC",
+      "stockName": "NTPC",
+      "quantity": 180,
+      "avgBuyPrice": 210,
+      "investedAmount": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "stockName": "Kotak Mahindra Bank",
+      "quantity": 45,
+      "avgBuyPrice": 1750,
+      "investedAmount": 78750,
+      "currentValue": 81900,
+      "pnl": 3150,
+      "pnlPercent": 4,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "MARUTI",
+      "stockName": "Maruti Suzuki",
+      "quantity": 10,
+      "avgBuyPrice": 9500,
+      "investedAmount": 95000,
+      "currentValue": 101000,
+      "pnl": 6000,
+      "pnlPercent": 6.32,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "M&M",
+      "stockName": "Mahindra & Mahindra",
+      "quantity": 35,
+      "avgBuyPrice": 1550,
+      "investedAmount": 54250,
+      "currentValue": 58800,
+      "pnl": 4550,
+      "pnlPercent": 8.39,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "LT",
+      "stockName": "Larsen & Toubro",
+      "quantity": 20,
+      "avgBuyPrice": 3200,
+      "investedAmount": 64000,
+      "currentValue": 69000,
+      "pnl": 5000,
+      "pnlPercent": 7.81,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TATAMOTORS",
+      "stockName": "Tata Motors",
+      "quantity": 150,
+      "avgBuyPrice": 520,
+      "investedAmount": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

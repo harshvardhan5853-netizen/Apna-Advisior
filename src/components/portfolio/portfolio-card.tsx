@@ -10,8 +10,8 @@ import {
   Link,
   Merge,
   Plus,
-  Shield,
   Settings,
+  Shield,
   Undo2,
   Upload,
   Wallet,
@@ -29,7 +29,8 @@ import { Button } from "@/components/ui/button";
 import { PortfolioList } from "./portfolio-list";
 import { CreatePortfolioDialog } from "./create-portfolio-dialog";
 import { AddToExistingDialog } from "./add-to-existing-dialog";
-import { AiSettingsDialog } from "./ai-settings-dialog";
+import { AiExtractionSettingsDialog } from "./ai-extraction-settings-dialog";
+
 
 export function PortfolioCard() {
   const portfolios = usePortfolios();
@@ -39,7 +40,7 @@ export function PortfolioCard() {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [mergeOpen, setMergeOpen] = React.useState(false);
   const [historyOpen, setHistoryOpen] = React.useState(false);
-  const [aiSettingsOpen, setAiSettingsOpen] = React.useState(false);
+  const [extractionSettingsOpen, setExtractionSettingsOpen] = React.useState(false);
 
   const loading = portfolios === undefined || activeId === undefined;
   const isEmpty = !loading && (portfolios?.length ?? 0) === 0;
@@ -116,16 +117,16 @@ export function PortfolioCard() {
             <History className="h-3.5 w-3.5" />
             History
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setAiSettingsOpen(true)}
-            title="AI Assistant settings"
+          <button
+            type="button"
+            onClick={() => setExtractionSettingsOpen(true)}
+            title="AI extraction settings"
+            className="rounded-lg p-1.5 text-white/30 transition-colors hover:bg-white/[0.06] hover:text-white/60"
           >
             <Settings className="h-3.5 w-3.5" />
-            Settings
-          </Button>
+          </button>
         </div>
+
       </div>
 
       {/* Import method chips */}
@@ -221,14 +222,14 @@ export function PortfolioCard() {
                   >
                     <History className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAiSettingsOpen(true)}
-                    title="AI Assistant settings"
+                  <button
+                    type="button"
+                    onClick={() => setExtractionSettingsOpen(true)}
+                    title="AI extraction settings"
+                    className="rounded-lg p-1.5 text-white/30 transition-colors hover:bg-white/[0.06] hover:text-white/60"
                   >
                     <Settings className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -284,7 +285,11 @@ export function PortfolioCard() {
         portfolios={portfolios ?? []}
         activeId={activeId ?? null}
       />
-      <AiSettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
+      <AiExtractionSettingsDialog
+        open={extractionSettingsOpen}
+        onOpenChange={setExtractionSettingsOpen}
+      />
+
     </div>
   );
 }

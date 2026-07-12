@@ -29,9 +29,14 @@ import { UploadArea } from "./upload-area";
 import { CameraCapture } from "./camera-capture";
 import { ReviewTable } from "./review-table";
 import { ImportStatsRow } from "./import-stats";
+import { validateHoldings, mergeDuplicates, checkAutoImportGate, summarizeValidation, type HoldingValidation } from "@/lib/validation-engine";
+import { computeConfidence, deriveStageScores, shouldAutoImport } from "@/lib/confidence-scorer";
+import { applyAiEnhancements } from "@/lib/ai-enhancer";
+import { readAiExtractionSettings } from "@/lib/ai-extraction-settings";
 import { PasswordPromptDialog, type PasswordPromptFile, type PasswordState } from "./password-prompt-dialog";
 import { detectProtectedFiles, validatePassword } from "@/lib/parsers/detect-protected";
 import { formatCompactINR } from "@/lib/utils";
+import { useExtractions } from "@/contexts/extraction-context";
 
 type Step = "upload" | "password" | "review" | "confirm" | "success";
 
@@ -54,6 +59,7 @@ export function CreatePortfolioDialog({
   const [progressLabel, setProgressLabel] = React.useState<string | undefined>();
   const [holdings, setHoldings] = React.useState<Holding[]>([]);
   const [warnings, setWarnings] = React.useState<string[]>([]);
+  const [validationResults, setValidationResults] = React.useState<HoldingValidation[]>([]);
   const [detectedSource, setDetectedSource] =
     React.useState<Portfolio["origin"]["source"]>("generic");
   const [camera, setCamera] = React.useState(false);
@@ -65,7 +71,10 @@ export function CreatePortfolioDialog({
   const [passwordPromptError, setPasswordPromptError] = React.useState("");
   const [passwordValue, setPasswordValue] = React.useState("");
   const [usePasswordForAll, setUsePasswordForAll] = React.useState(false);
+  const [background, setBackground] = React.useState(!!activePortfolio);
   const passwordMapRef = React.useRef<Map<number, string>>(new Map());
+
+  const { addJob } = useExtractions();
 
   // Reset when dialog closes
   React.useEffect(() => {
@@ -90,6 +99,7 @@ export function CreatePortfolioDialog({
         setPasswordPromptError("");
         setPasswordValue("");
         setUsePasswordForAll(false);
+        setBackground(false);
         passwordMapRef.current.clear();
       }, 250);
       return () => clearTimeout(t);
@@ -117,6 +127,37 @@ export function CreatePortfolioDialog({
   const canContinueUpload =
     name.trim().length > 0 && files.length > 0 && !processing;
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Extraction telemetry (easy-disable flag)
+  const ENABLE_TELEMETRY = true;
+
+  function logTelemetry(data: Record<string, unknown>) {
+    if (!ENABLE_TELEMETRY) return;
+    try {
+      const entry = { ...data, ts: Date.now() };
+      const stored = JSON.parse(
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("apna-advisor.extraction-log") ?? "[]"
+          : "[]",
+      ) as Record<string, unknown>[];
+      stored.push(entry);
+      if (stored.length > 200) stored.splice(0, stored.length - 200);
+      window.localStorage.setItem("apna-advisor.extraction-log", JSON.stringify(stored));
+    } catch { /* ignore */ }
+  }
+
+  const submitBackgroundJob = React.useCallback((passwordMap?: Map<number, string>) => {
+    addJob(
+      crypto.randomUUID(),
+      files.map((f) => f.name).join(", "),
+      name.trim() || `Portfolio (${files.length} file${files.length > 1 ? "s" : ""})`,
+      files,
+      passwordMap,
+    );
+    onOpenChange(false);
+    toast.success("Extraction submitted. You'll be notified when it's ready.");
+  }, [addJob, files, name, onOpenChange]);
+
   const doParse = React.useCallback(
     async (passwordMap?: Map<number, string>) => {
       setProcessing(true);
@@ -140,25 +181,164 @@ export function CreatePortfolioDialog({
             setProgress((p.index + 1) / Math.max(p.total, 1));
           }
         }, passwordMap);
-        setHoldings(result.holdings);
-        setWarnings(result.warnings);
-        setDetectedSource(result.source);
-        if (result.holdings.length > 0) {
+
+        let parsed = result.holdings;
+        const engine = result.source;
+
+        if (parsed.length > 0) {
+          // ── Phase 8: Initial Validation ─────────────────────────────────
+          setProgressLabel("Validating extracted data…");
+          let validationResults = validateHoldings(parsed);
+          const summary = summarizeValidation(validationResults);
+
+          const settings = readAiExtractionSettings();
+          const aiAvailable = settings.geminiApiKey?.length > 0;
+
+          // ── Phase 7: AI Enhancement (only when needed) ──────────────────
+          // Rules: validation has critical issues, unknown symbols, missing fields,
+          // OR parser confidence is low (OCR ambiguity)
+          const shouldUseAi =
+            aiAvailable &&
+            (summary.totalCriticalErrors > 0 ||
+             summary.unknownSymbols.length > 0 ||
+             validationResults.some((v) => v.missingRequiredFields.length > 0) ||
+             parsed.some((h) => h.confidence < 0.95));
+
+          if (shouldUseAi) {
+            setProgressLabel("AI is cleaning extracted data…");
+            try {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 15000);
+
+              const res = await fetch("/api/ai/cleanup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  holdings: parsed,
+                  apiKey: settings.geminiApiKey,
+                  model: settings.extractionModel ?? "gemini-2.5-flash",
+                }),
+                signal: controller.signal,
+              });
+              clearTimeout(timeout);
+
+              if (res.ok) {
+                const { enhanced } = await res.json();
+                parsed = applyAiEnhancements(parsed, enhanced);
+                const changedCount = enhanced.filter(
+                  (e: { changedFields: string[] }) => e.changedFields.length > 0,
+                ).length;
+                if (changedCount > 0) {
+                  toast.success(`AI cleaned ${changedCount} holding${changedCount > 1 ? "s" : ""}`);
+                }
+                // Re-validate after AI
+                setProgressLabel("Re-validating cleaned data…");
+                validationResults = validateHoldings(parsed);
+              } else if (res.status === 401 || res.status === 403) {
+                toast.warning("AI skipped: invalid API key. Edit in ⚙ Settings.");
+              } else if (res.status === 429) {
+                toast.warning("AI rate-limited. Using parsed data as-is.");
+              } else {
+                toast.warning("AI temporarily unavailable. Using parsed data.");
+              }
+            } catch (err) {
+              // AI failure must NEVER break imports (requirement #7)
+              const msg = err instanceof Error ? err.message : String(err);
+              if (msg.includes("abort") || msg.includes("timeout")) {
+                console.warn("AI enhancement timed out, using parsed data as-is");
+              } else {
+                console.warn("AI enhancement failed, using parsed data as-is:", msg);
+              }
+            }
+          }
+
+          // ── Merge duplicates ─────────────────────────────────────────────
+          setProgressLabel("Merging duplicate entries…");
+          parsed = mergeDuplicates(parsed);
+
+          // ── Phase 9: Final Confidence Calculation ────────────────────────
+          setProgressLabel("Computing confidence scores…");
+          validationResults = validateHoldings(parsed);
+          const flatValidations = validationResults.map((v) => ({
+            id: v.holdingId,
+            score: v.score,
+            confidencePenalty: v.confidencePenalty,
+          }));
+
+          const confidenceResults = parsed.map((h) => {
+            const v = validationResults.find((vr) => vr.holdingId === h.id);
+            const stages = deriveStageScores(h, v);
+            return { stages, result: computeConfidence(stages) };
+          });
+          const finalLowest = Math.min(...confidenceResults.map((c) => c.result.finalScore));
+
+          const finalSummary = summarizeValidation(validationResults);
+          const gate = checkAutoImportGate(parsed, validationResults, finalLowest);
+          const canAuto = gate.canAutoImport;
+
+          setHoldings(parsed);
+          setValidationResults(validationResults);
+          setWarnings(result.warnings);
+          setDetectedSource(result.source);
+
+          // ── Extraction telemetry ─────────────────────────────────────────
+          const nMissingFields = validationResults.reduce((s, v) => s + v.missingRequiredFields.length, 0);
+          logTelemetry({
+            fileType: files.map((f) => f.name.split(".").pop()),
+            extractionEngine: engine,
+            aiUsed: shouldUseAi,
+            nHoldings: parsed.length,
+            extractionConfidence: confidenceResults[0]?.stages.ocr ?? 0,
+            parserConfidence: confidenceResults[0]?.stages.parser ?? 0,
+            validationConfidence: confidenceResults[0]?.stages.validation ?? 0,
+            finalConfidence: finalLowest,
+            criticalErrors: finalSummary.totalCriticalErrors,
+            unknownSymbols: finalSummary.unknownSymbols.length,
+            missingFields: nMissingFields,
+            reviewRequired: !canAuto,
+          });
+
           const formattedBroker =
             result.source === "angelone"
               ? "Angel One"
               : result.source === "generic"
                 ? "Generic/Custom"
                 : result.source.charAt(0).toUpperCase() + result.source.slice(1);
-          toast.success(
-            `Successfully parsed ${result.holdings.length} holdings. Detected broker: ${formattedBroker}.`,
-          );
+
+          // ── Phase 10: Import Decision ───────────────────────────────────
+          if (parsed.length > 0) {
+            const issueParts: string[] = [];
+            if (!canAuto) {
+              if (finalLowest < 0.95) issueParts.push("low confidence");
+              if (finalSummary.totalCriticalErrors > 0) issueParts.push(`${finalSummary.totalCriticalErrors} validation error${finalSummary.totalCriticalErrors > 1 ? "s" : ""}`);
+              if (finalSummary.unknownSymbols.length > 0) issueParts.push(`${finalSummary.unknownSymbols.length} unknown symbol${finalSummary.unknownSymbols.length > 1 ? "s" : ""}`);
+              if (nMissingFields > 0) issueParts.push(`${nMissingFields} missing field${nMissingFields > 1 ? "s" : ""}`);
+            }
+
+            const aiHint = aiAvailable ? "" : " Add a Gemini API key in ⚙ Settings for AI-powered corrections.";
+            const reviewNeeded = issueParts.length > 0;
+            toast.success(
+              reviewNeeded
+                ? `Parsed ${parsed.length} holdings from ${formattedBroker}. Review needed: ${issueParts.join(", ")}.${aiHint}`
+                : `Verified ${parsed.length} holdings from ${formattedBroker} · Review to confirm.`,
+            );
+            setStep("review");
+          } else {
+            toast.error(
+              "Couldn't extract any holdings. Try a clearer file or different format.",
+            );
+            setStep("review");
+          }
         } else {
+          setHoldings(parsed);
+          setValidationResults(validationResults);
+          setWarnings(result.warnings);
+          setDetectedSource(result.source);
           toast.error(
             "Couldn't extract any holdings. Try a clearer file or different format.",
           );
+          setStep("review");
         }
-        setStep("review");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Parse failed";
         toast.error(msg);
@@ -168,7 +348,7 @@ export function CreatePortfolioDialog({
         setProgressLabel(undefined);
       }
     },
-    [files],
+    [files, activePortfolio],
   );
 
   const handleParse = async () => {
@@ -239,7 +419,11 @@ export function CreatePortfolioDialog({
           }
         }
         if (protectedResults.some((r) => r.status === "ok")) {
-          void doParse();
+          if (background) {
+            submitBackgroundJob();
+          } else {
+            void doParse();
+          }
         } else {
           toast.error("None of the selected files could be processed.");
         }
@@ -279,7 +463,11 @@ export function CreatePortfolioDialog({
           setPasswordPromptFiles([]);
           setPasswordPromptIndex(0);
           setUsePasswordForAll(false);
-          void doParse(passwordMapRef.current);
+          if (background) {
+            submitBackgroundJob(passwordMapRef.current);
+          } else {
+            void doParse(passwordMapRef.current);
+          }
         } else if (passwordPromptIndex < passwordPromptFiles.length - 1) {
           setPasswordPromptIndex((i) => i + 1);
           setPasswordPromptState("idle");
@@ -289,7 +477,11 @@ export function CreatePortfolioDialog({
           setShowPasswordPrompt(false);
           setPasswordPromptFiles([]);
           setPasswordPromptIndex(0);
-          void doParse(passwordMapRef.current);
+          if (background) {
+            submitBackgroundJob(passwordMapRef.current);
+          } else {
+            void doParse(passwordMapRef.current);
+          }
         }
       } else {
         setPasswordPromptState("error");
@@ -319,12 +511,12 @@ export function CreatePortfolioDialog({
     }
   };
 
-  const handleCreate = async () => {
+  const handleCreate = async (holdingsToSave?: Holding[]) => {
     setProcessing(true);
     try {
       const created = await createPortfolio({
         name: name.trim(),
-        holdings,
+        holdings: holdingsToSave ?? holdings,
         source: detectedSource,
         fileNames: files.map((f) => f.name),
       });
@@ -408,6 +600,17 @@ export function CreatePortfolioDialog({
                   processingLabel={progressLabel}
                   progress={progress}
                 />
+                {!processing && files.length > 0 && (
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={background}
+                      onChange={(e) => setBackground(e.target.checked)}
+                      className="rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500"
+                    />
+                    Run in background — close dialog once submitted
+                  </label>
+                )}
               </motion.div>
             )}
 
@@ -435,7 +638,7 @@ export function CreatePortfolioDialog({
                     </ul>
                   </div>
                 )}
-                <ReviewTable holdings={holdings} onChange={setHoldings} />
+                <ReviewTable holdings={holdings} onChange={setHoldings} validationResults={validationResults} />
               </motion.div>
             )}
 
@@ -560,7 +763,7 @@ export function CreatePortfolioDialog({
                     No, go back
                   </Button>
                   <Button
-                    onClick={handleCreate}
+                    onClick={() => handleCreate()}
                     disabled={processing}
                     variant="destructive"
                   >

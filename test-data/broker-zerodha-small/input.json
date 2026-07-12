@@ -1,0 +1,39 @@
+{
+  "broker": "zerodha",
+  "timestamp": "2026-07-09T10:30:00Z",
+  "holdings": [
+    {
+      "tradingSymbol": "TCS",
+      "exchange": "NSE",
+      "quantity": 20,
+      "averagePrice": 3450,
+      "lastPrice": 3620,
+      "investedValue": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93
+    },
+    {
+      "tradingSymbol": "ICICIBANK",
+      "exchange": "NSE",
+      "quantity": 100,
+      "averagePrice": 890,
+      "lastPrice": 950,
+      "investedValue": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74
+    },
+    {
+      "tradingSymbol": "HCLTECH",
+      "exchange": "NSE",
+      "quantity": 55,
+      "averagePrice": 1200,
+      "lastPrice": 1280,
+      "investedValue": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67
+    }
+  ]
+}

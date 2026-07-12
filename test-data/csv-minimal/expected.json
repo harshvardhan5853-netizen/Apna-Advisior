@@ -1,0 +1,40 @@
+{
+  "holdings": [
+    {
+      "symbol": "HCLTECH",
+      "stockName": "HCL Technologies",
+      "quantity": 55,
+      "avgBuyPrice": 1200,
+      "investedAmount": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +14,9 @@ import {
   User,
   Mail,
   UserPlus,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FintechHero } from "@/components/auth/fintech-hero";
@@ -34,6 +37,29 @@ const fadeUp = {
     y: 0,
     transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as const },
   },
+};
+
+/* ─── Password strength ─── */
+type Strength = "empty" | "weak" | "medium" | "strong";
+
+function computeStrength(pw: string): { level: Strength; label: string; pct: number; color: string } {
+  if (!pw) return { level: "empty", label: "", pct: 0, color: "bg-white/10" };
+  let score = 0;
+  if (pw.length >= 8) score += 1;
+  if (pw.length >= 12) score += 1;
+  if (/[A-Z]/.test(pw)) score += 1;
+  if (/[a-z]/.test(pw)) score += 1;
+  if (/[0-9]/.test(pw)) score += 1;
+  if (/[^A-Za-z0-9]/.test(pw)) score += 1;
+  if (score <= 2) return { level: "weak", label: "Weak", pct: 25, color: "bg-red-400" };
+  if (score <= 4) return { level: "medium", label: "Medium", pct: 60, color: "bg-amber-400" };
+  return { level: "strong", label: "Strong", pct: 100, color: "bg-emerald-400" };
+}
+
+const strengthIcon: Record<string, React.ReactNode> = {
+  weak: <ShieldX className="size-3 text-red-400" />,
+  medium: <ShieldAlert className="size-3 text-amber-400" />,
+  strong: <ShieldCheck className="size-3 text-emerald-400" />,
 };
 
 /* ─── Page ─── */
@@ -237,9 +263,32 @@ export default function RegisterPage() {
                     )}
                   </button>
                 </div>
-                <p className="mt-1.5 text-[10px] text-white/25">
-                  8+ characters, 1 uppercase, 1 number
-                </p>
+                <div className="mt-2 space-y-1">
+                  {/* ── Strength bar ── */}
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${computeStrength(password).pct}%` }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className={`h-full rounded-full ${computeStrength(password).color}`}
+                      />
+                    </div>
+                    {password && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-1 text-[10px] font-medium"
+                      >
+                        {strengthIcon[computeStrength(password).level]}
+                        {computeStrength(password).label}
+                      </motion.span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-white/25">
+                    8+ characters, 1 uppercase, 1 number
+                  </p>
+                </div>
               </motion.div>
 
               {/* Confirm Password */}

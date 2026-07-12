@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "benchmark": "tsx scripts/run-benchmark.ts",
+    "benchmark:verbose": "tsx scripts/run-benchmark.ts --verbose"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -25,6 +30,7 @@
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^1.1.7",
     "framer-motion": "^12.42.2",
+    "jose": "^6.2.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.23.0",
@@ -33,28 +39,31 @@
     "pdfjs-dist": "6.1.200",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-
     "recharts": "^3.9.2",
     "rss-parser": "^3.13.0",
     "screener-india": "^1.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
-    "tesseract.js": "^7.0.0",
     "trading-signals": "^7.4.3",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^26.1.0",
     "@types/papaparse": "^5.3.15",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.6.0",
     "eslint-config-next": "^16.2.10",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.63.0"
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.1.10"
   }
 }

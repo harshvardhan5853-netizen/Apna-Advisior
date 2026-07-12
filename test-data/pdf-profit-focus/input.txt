@@ -1,0 +1,15 @@
+Profitable Stocks
+=================
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+ICICIBANK | ICICI Bank | 100 | 890 | 89000 | 95000 | 6000 | 6.74
+TATAMOTORS | Tata Motors | 150 | 520 | 78000 | 84000 | 6000 | 7.69
+MARUTI | Maruti Suzuki | 10 | 9500 | 95000 | 101000 | 6000 | 6.32
+WIPRO | Wipro | 90 | 430 | 38700 | 41400 | 2700 | 6.98
+---
+Total Invested: 300700
+Total Value: 321400
+Total P&L: 20700
+-- End --

@@ -46,7 +46,7 @@ const config = tseslint.config(
     },
   },
   {
-    ignores: [".next/**", "out/**", "build/**", "next-env.d.ts", "node_modules"],
+    ignores: [".next/**", "out/**", "build/**", ".venv/**", "next-env.d.ts", "node_modules"],
   },
 );
 

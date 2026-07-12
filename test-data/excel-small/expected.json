@@ -1,0 +1,52 @@
+{
+  "holdings": [
+    {
+      "symbol": "HDFC",
+      "stockName": "HDFC Bank",
+      "quantity": 80,
+      "avgBuyPrice": 1520,
+      "investedAmount": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICI",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "KOTAK",
+      "stockName": "Kotak Mahindra Bank",
+      "quantity": 45,
+      "avgBuyPrice": 1750,
+      "investedAmount": 78750,
+      "currentValue": 81900,
+      "pnl": 3150,
+      "pnlPercent": 4,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "HCL",
+      "stockName": "HCL Technologies",
+      "quantity": 55,
+      "avgBuyPrice": 1200,
+      "investedAmount": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67,
+      "confidence": 0.8,
+      "needsReview": false
+    }
+  ]
+}

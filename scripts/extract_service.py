@@ -31,12 +31,19 @@ def uid(prefix: str = "h") -> str:
 
 
 def emit(payload: dict[str, Any]) -> None:
-    sys.stdout.write(json.dumps(payload, ensure_ascii=False))
-    sys.stdout.flush()
+    data = json.dumps(payload, ensure_ascii=False)
+    # Use buffer.write with utf-8 to avoid Windows console encoding issues (₹ symbol etc.)
+    sys.stdout.buffer.write(data.encode("utf-8"))
+    sys.stdout.buffer.write(b"\n")
+    sys.stdout.buffer.flush()
 
 
 def emit_error(code: str, detail: str) -> None:
-    emit({"error": code, "detail": detail, "holdings": [], "warnings": [detail]})
+    payload = {"error": code, "detail": detail, "holdings": [], "warnings": [detail]}
+    data = json.dumps(payload, ensure_ascii=False)
+    sys.stdout.buffer.write(data.encode("utf-8"))
+    sys.stdout.buffer.write(b"\n")
+    sys.stdout.buffer.flush()
 
 
 # ── broker detection ─────────────────────────────────────────────────────────

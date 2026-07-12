@@ -174,7 +174,7 @@ export interface GeminiExtractResult {
   warnings: string[];
 }
 
-export async function extractHoldingsWithGemini(
+export async function extractHoldingsFromText(
   rawText: string,
   apiKey: string,
   model = DEFAULT_MODEL,

@@ -1,0 +1,11 @@
+{
+  "holdings": [
+    { "quantity": 8, "investedAmount": 13077.00, "avgBuyPrice": 1634.64, "currentPrice": 1168.20 },
+    { "quantity": 4, "investedAmount": 8960.80, "avgBuyPrice": 2240.20, "currentPrice": 1923.50 },
+    { "quantity": 4, "investedAmount": 16372.44, "avgBuyPrice": 4093.11, "currentPrice": 3991.90 },
+    { "quantity": 1, "investedAmount": 2793.90, "avgBuyPrice": 2793.90, "currentPrice": 2731.40 },
+    { "quantity": 3, "investedAmount": 4092.30, "avgBuyPrice": 1364.10, "currentPrice": 1414.70 },
+    { "quantity": 5, "investedAmount": 8805.25, "avgBuyPrice": 1761.05, "currentPrice": 1605.40 }
+  ],
+  "ignoreFields": ["symbol", "stockName", "pnl", "pnlPercent"]
+}

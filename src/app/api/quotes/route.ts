@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { LiveQuote, QuotesResponse } from "@/lib/live-quotes/types";
 import { normalizeMarketState } from "@/lib/live-quotes/market-hours";
+import { quotesSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -145,10 +146,6 @@ async function fetchYahoo(symbols: string[]): Promise<{ quotes: LiveQuote[]; ups
   return { quotes, upstreamMarketState };
 }
 
-interface RequestBody {
-  symbols?: unknown;
-}
-
 function parseSymbols(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   const out: string[] = [];
@@ -167,14 +164,19 @@ function parseSymbols(input: unknown): string[] {
 }
 
 export async function POST(req: Request) {
-  let body: RequestBody;
+  let raw: unknown;
   try {
-    body = (await req.json()) as RequestBody;
+    raw = await req.json();
   } catch {
     return NextResponse.json({ error: "invalid-json" }, { status: 400 });
   }
 
-  const symbols = parseSymbols(body.symbols);
+  const input = quotesSchema.safeParse(raw);
+  if (!input.success) {
+    return NextResponse.json({ error: input.error.issues[0]?.message ?? "Invalid symbols" }, { status: 400 });
+  }
+
+  const symbols = parseSymbols(input.data.symbols);
   if (symbols.length === 0) {
     const empty: QuotesResponse = {
       quotes: [],

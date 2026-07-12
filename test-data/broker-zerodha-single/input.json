@@ -1,0 +1,17 @@
+{
+  "broker": "zerodha",
+  "timestamp": "2026-07-09T10:30:00Z",
+  "holdings": [
+    {
+      "tradingSymbol": "NTPC",
+      "exchange": "NSE",
+      "quantity": 180,
+      "averagePrice": 210,
+      "lastPrice": 240,
+      "investedValue": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29
+    }
+  ]
+}

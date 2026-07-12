@@ -12,7 +12,7 @@ import {
 import { fetchQueriesInParallel } from "@/lib/news/rss-parser";
 import { dedupeArticles } from "@/lib/news/dedupe";
 import { analyzeBatch, pingGemini } from "@/lib/news/gemini";
-import { inspectCacheStats } from "@/lib/news/cache";
+import { getCachedRss, setCachedRss, inspectCacheStats } from "@/lib/news/cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,97 +94,69 @@ export async function POST(request: Request) {
     set.queries.map((query) => ({ symbolKey: set.key, query })),
   );
 
+  const timeframeDays = clampTimeframe(body.timeframeDays);
   const warnings: string[] = [];
+
+  const cacheKey = `${timeframeDays}:${flatQueries.map((fq) => fq.query).sort().join("|")}`;
+  const cached = getCachedRss(cacheKey);
+  if (cached) {
+    return NextResponse.json(await buildResponse(cached, sets, unresolved, body, warnings, timeframeDays));
+  }
+
   let raw: RawNewsArticle[] = [];
   try {
     const result = await fetchQueriesInParallel(flatQueries, 4);
     raw = result.articles;
     warnings.push(...result.warnings);
+    setCachedRss(cacheKey, raw);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return bad(502, { error: "news-fetch-failed", detail: message });
   }
 
-  // Time filter (default last 30 days).
-  const timeframeDays = clampTimeframe(body.timeframeDays);
+  return NextResponse.json(await buildResponse(raw, sets, unresolved, body, warnings, timeframeDays));
+}
+
+async function buildResponse(
+  raw: RawNewsArticle[],
+  sets: ReturnType<typeof buildPortfolioQuerySets>["sets"],
+  unresolved: string[],
+  body: PostBody,
+  warnings: string[],
+  timeframeDays: number,
+): Promise<NewsFetchResult> {
   const cutoff = Date.now() - timeframeDays * 24 * 60 * 60 * 1000;
   const withinWindow = raw.filter((a) => a.publishedAt >= cutoff);
-
-  // Re-attribute articles across all stock alias sets so multi-stock stories
-  // surface for every affected holding, not just the query that surfaced them.
   const attributed = withinWindow.map((article) => {
     const derived = attributeArticleToStocks(article.title, article.snippet, sets);
-    const merged = Array.from(
-      new Set([...article.matchedSymbols, ...derived].map((s) => s.toUpperCase())),
-    );
+    const merged = Array.from(new Set([...article.matchedSymbols, ...derived].map((s) => s.toUpperCase())));
     return { ...article, matchedSymbols: merged };
   });
-
-  // Drop articles that no longer attribute to any user stock after alias check.
   const relevant = attributed.filter((a) => a.matchedSymbols.length > 0);
   const deduped = dedupeArticles(relevant);
-
-  const emptySymbols = sets
-    .map((s) => s.key)
-    .filter((key) => !deduped.some((a) => a.matchedSymbols.includes(key)));
-
-  // Prepare analyzed articles slot. Preserve chronological ordering.
-  const analyzedArticles: AnalyzedNewsArticle[] = deduped.map((a) => ({
-    ...a,
-    analysis: null,
-  }));
-
+  const emptySymbols = sets.map((s) => s.key).filter((key) => !deduped.some((a) => a.matchedSymbols.includes(key)));
+  const analyzedArticles: AnalyzedNewsArticle[] = deduped.map((a) => ({ ...a, analysis: null }));
   const apiKey = typeof body.geminiApiKey === "string" ? body.geminiApiKey.trim() : "";
   const llmEnabled = apiKey.length >= 20;
-
   if (llmEnabled && analyzedArticles.length > 0) {
     const portfolioSymbols = sets.map((s) => s.key);
     const toAnalyze = analyzedArticles.slice(0, MAX_ARTICLES_TO_ANALYZE);
-
     if (analyzedArticles.length > MAX_ARTICLES_TO_ANALYZE) {
-      warnings.push(
-        `Only the ${MAX_ARTICLES_TO_ANALYZE} most recent articles were analyzed to stay within Gemini quota.`,
-      );
+      warnings.push(`Only the ${MAX_ARTICLES_TO_ANALYZE} most recent articles were analyzed to stay within Gemini quota.`);
     }
-
     const batchInput = toAnalyze.map((article) => ({
       article,
-      assign(analysis: typeof article.analysis, error?: string) {
-        article.analysis = analysis;
-        if (analysis === null) {
-          article.analysisFailed = true;
-          article.analysisError = error;
-        }
-      },
+      assign(analysis: typeof article.analysis, error?: string) { article.analysis = analysis; if (analysis === null) { article.analysisFailed = true; article.analysisError = error; } },
     }));
-
     try {
-      const result = await analyzeBatch(batchInput, {
-        apiKey,
-        model: body.model,
-        portfolioSymbols,
-        concurrency: 4,
-      });
-      if (result.failed > 0) {
-        warnings.push(
-          `Gemini analysis failed for ${result.failed} article(s): ${result.errors.join("; ")}`,
-        );
-      }
+      const result = await analyzeBatch(batchInput, { apiKey, model: body.model, portfolioSymbols, concurrency: 4 });
+      if (result.failed > 0) warnings.push(`Gemini analysis failed for ${result.failed} article(s): ${result.errors.join("; ")}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       warnings.push(`Gemini batch aborted: ${message}`);
     }
   }
-
-  const payload: NewsFetchResult = {
-    articles: analyzedArticles,
-    fetchedAt: Date.now(),
-    emptySymbols,
-    unresolvedSymbols: unresolved,
-    llmEnabled,
-    warnings,
-  };
-  return NextResponse.json(payload);
+  return { articles: analyzedArticles, fetchedAt: Date.now(), emptySymbols, unresolvedSymbols: unresolved, llmEnabled, warnings };
 }
 
 function clampTimeframe(value: unknown): number {

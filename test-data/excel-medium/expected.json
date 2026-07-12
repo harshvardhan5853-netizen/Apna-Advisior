@@ -1,0 +1,100 @@
+{
+  "holdings": [
+    {
+      "symbol": "SUN",
+      "stockName": "Sun Pharmaceutical",
+      "quantity": 70,
+      "avgBuyPrice": 880,
+      "investedAmount": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "MAHINDRA",
+      "stockName": "Mahindra & Mahindra",
+      "quantity": 35,
+      "avgBuyPrice": 1550,
+      "investedAmount": 54250,
+      "currentValue": 58800,
+      "pnl": 4550,
+      "pnlPercent": 8.39,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "WIPRO",
+      "stockName": "Wipro",
+      "quantity": 90,
+      "avgBuyPrice": 430,
+      "investedAmount": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "LARSEN",
+      "stockName": "Larsen & Toubro",
+      "quantity": 20,
+      "avgBuyPrice": 3200,
+      "investedAmount": 64000,
+      "currentValue": 69000,
+      "pnl": 5000,
+      "pnlPercent": 7.81,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "BAJAJ",
+      "stockName": "Bajaj Finance",
+      "quantity": 12,
+      "avgBuyPrice": 6800,
+      "investedAmount": 81600,
+      "currentValue": 86400,
+      "pnl": 4800,
+      "pnlPercent": 5.88,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICI",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "STATE",
+      "stockName": "State Bank of India",
+      "quantity": 120,
+      "avgBuyPrice": 580,
+      "investedAmount": 69600,
+      "currentValue": 74400,
+      "pnl": 4800,
+      "pnlPercent": 6.9,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "ASIAN",
+      "stockName": "Asian Paints",
+      "quantity": 15,
+      "avgBuyPrice": 3150,
+      "investedAmount": 47250,
+      "currentValue": 44700,
+      "pnl": -2550,
+      "pnlPercent": -5.4,
+      "confidence": 0.8,
+      "needsReview": false
+    }
+  ]
+}

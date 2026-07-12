@@ -1,0 +1,14 @@
+Underperformers
+===============
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+SUNPHARMA | Sun Pharmaceutical | 70 | 880 | 61600 | 64400 | 2800 | 4.55
+TCS | Tata Consultancy Services | 20 | 3450 | 69000 | 72400 | 3400 | 4.93
+KOTAKBANK | Kotak Mahindra Bank | 45 | 1750 | 78750 | 81900 | 3150 | 4
+---
+Total Invested: 209350
+Total Value: 218700
+Total P&L: 9350
+-- End --

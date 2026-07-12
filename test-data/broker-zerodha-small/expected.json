@@ -1,0 +1,40 @@
+{
+  "holdings": [
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "HCLTECH",
+      "stockName": "HCL Technologies",
+      "quantity": 55,
+      "avgBuyPrice": 1200,
+      "investedAmount": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

@@ -60,10 +60,6 @@ export function uid(prefix = "id"): string {
   return `${prefix}_${Date.now().toString(36)}_${rand}`;
 }
 
-export function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 /** Best-effort numeric parse for OCR / CSV cells that may include ₹, commas, -, brackets. */
 export function parseNumberLoose(raw: unknown): number {
   if (raw == null) return NaN;

@@ -1,0 +1,124 @@
+{
+  "holdings": [
+    {
+      "symbol": "SUNPHARMA",
+      "stockName": "Sun Pharmaceutical",
+      "quantity": 70,
+      "avgBuyPrice": 880,
+      "investedAmount": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "stockName": "Kotak Mahindra Bank",
+      "quantity": 45,
+      "avgBuyPrice": 1750,
+      "investedAmount": 78750,
+      "currentValue": 81900,
+      "pnl": 3150,
+      "pnlPercent": 4,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "SBIN",
+      "stockName": "State Bank of India",
+      "quantity": 120,
+      "avgBuyPrice": 580,
+      "investedAmount": 69600,
+      "currentValue": 74400,
+      "pnl": 4800,
+      "pnlPercent": 6.9,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TATAMOTORS",
+      "stockName": "Tata Motors",
+      "quantity": 150,
+      "avgBuyPrice": 520,
+      "investedAmount": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "stockName": "Bharti Airtel",
+      "quantity": 40,
+      "avgBuyPrice": 1050,
+      "investedAmount": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "NTPC",
+      "stockName": "NTPC",
+      "quantity": 180,
+      "avgBuyPrice": 210,
+      "investedAmount": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TITAN",
+      "stockName": "Titan Company",
+      "quantity": 25,
+      "avgBuyPrice": 2800,
+      "investedAmount": 70000,
+      "currentValue": 77500,
+      "pnl": 7500,
+      "pnlPercent": 10.71,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

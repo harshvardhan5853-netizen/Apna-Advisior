@@ -304,7 +304,7 @@ export function AddToExistingDialog({
                     </ul>
                   </div>
                 )}
-                <ReviewTable holdings={holdings} onChange={setHoldings} />
+                <ReviewTable holdings={holdings} onChange={setHoldings} existingHoldings={target?.holdings} />
               </motion.div>
             )}
 

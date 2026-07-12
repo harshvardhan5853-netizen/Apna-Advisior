@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 /* ─── Types ─── */
 export interface AuthUser {
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Public paths that don't require auth — avoid redirect loops.
     // Must match proxy.ts publicPaths.
-    const publicPaths = ["/login", "/register", "/forgot-password", "/reset"];
+    const publicPaths = ["/login", "/register"];
 
     const saved = loadUsernames();
     setRememberedUsernames(saved);
@@ -99,18 +100,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           // Session invalid (stale cookie, server restart, etc.) —
           // The /api/auth/me route already cleared the cookie server-side.
-          // If we're not on a public page, redirect to login.
+          // If we're not on a public page, warn then redirect to login.
           const pathname = window.location.pathname;
           const onPublicPage = publicPaths.some((p) =>
             pathname.startsWith(p),
           );
           if (!onPublicPage) {
-            router.push("/login");
+            toast.warning("Session expired — redirecting to login", {
+              duration: 4000,
+            });
+            setTimeout(() => router.push("/login"), 2000);
           }
         }
       })
-      .catch(() => {
-        /* not authenticated — fine */
+      .catch((e) => {
+        console.error("[auth] session check failed:", e);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

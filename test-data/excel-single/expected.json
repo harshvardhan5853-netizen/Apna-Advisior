@@ -1,0 +1,16 @@
+{
+  "holdings": [
+    {
+      "symbol": "SUN",
+      "stockName": "Sun Pharmaceutical",
+      "quantity": 70,
+      "avgBuyPrice": 880,
+      "investedAmount": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55,
+      "confidence": 0.8,
+      "needsReview": false
+    }
+  ]
+}

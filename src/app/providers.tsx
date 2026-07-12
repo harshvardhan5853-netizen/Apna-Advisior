@@ -3,11 +3,17 @@
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { AuthProvider } from "@/contexts/auth-context";
+import { ExtractionProvider } from "@/contexts/extraction-context";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider delayDuration={200}>
-      <AuthProvider>{children}</AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <ExtractionProvider>{children}</ExtractionProvider>
+        </AuthProvider>
+      </ErrorBoundary>
       <Toaster
         position="top-right"
         theme="dark"

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { PageShell } from "@/components/layout/page-shell";
-import { PortfolioViewPage } from "@/components/portfolio-view/view-page";
+import { PortfolioViewPage } from "@/components/portfolio/view/view-page";
 
 export default function PortfolioRoute() {
   return (

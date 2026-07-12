@@ -1,0 +1,52 @@
+{
+  "holdings": [
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "HDFCBANK",
+      "stockName": "HDFC Bank",
+      "quantity": 80,
+      "avgBuyPrice": 1520,
+      "investedAmount": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "stockName": "Bharti Airtel",
+      "quantity": 40,
+      "avgBuyPrice": 1050,
+      "investedAmount": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

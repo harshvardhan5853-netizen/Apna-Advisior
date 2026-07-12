@@ -54,6 +54,8 @@ export function UploadArea({
     [files, onFilesChange],
   );
 
+
+
   // Paste screenshots via Ctrl+V. Scope: while dialog/section is mounted.
   React.useEffect(() => {
     function handlePaste(e: ClipboardEvent) {
@@ -98,15 +100,6 @@ export function UploadArea({
           processing && "pointer-events-none opacity-70",
         )}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPT_STR}
-          multiple
-          className="hidden"
-          onChange={handleFileChange}
-        />
-
         <AnimatePresence mode="wait">
           {processing ? (
             <motion.div
@@ -170,17 +163,20 @@ export function UploadArea({
                 <FormatPill icon={ImageIcon}>PNG · JPG · WEBP</FormatPill>
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-2" data-nofocus>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openFilePicker();
-                  }}
+                <label
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:bg-white/[0.1]"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <UploadCloud className="h-4 w-4" /> Browse files
-                </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPT_STR}
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
                 <PasteHintButton />
                 {onOpenCamera && (
                   <>

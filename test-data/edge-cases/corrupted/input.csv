@@ -1,0 +1,3 @@
+This is not a CSV file at all.
+\x00\x01\x02\xFF\xFE
+No headers, no columns.

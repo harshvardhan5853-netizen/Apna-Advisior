@@ -1,0 +1,138 @@
+{
+  "broker": "zerodha",
+  "timestamp": "2026-07-09T10:30:00Z",
+  "holdings": [
+    {
+      "tradingSymbol": "TCS",
+      "exchange": "NSE",
+      "quantity": 20,
+      "averagePrice": 3450,
+      "lastPrice": 3620,
+      "investedValue": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93
+    },
+    {
+      "tradingSymbol": "ICICIBANK",
+      "exchange": "NSE",
+      "quantity": 100,
+      "averagePrice": 890,
+      "lastPrice": 950,
+      "investedValue": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74
+    },
+    {
+      "tradingSymbol": "HCLTECH",
+      "exchange": "NSE",
+      "quantity": 55,
+      "averagePrice": 1200,
+      "lastPrice": 1280,
+      "investedValue": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67
+    },
+    {
+      "tradingSymbol": "BAJFINANCE",
+      "exchange": "NSE",
+      "quantity": 12,
+      "averagePrice": 6800,
+      "lastPrice": 7200,
+      "investedValue": 81600,
+      "currentValue": 86400,
+      "pnl": 4800,
+      "pnlPercent": 5.88
+    },
+    {
+      "tradingSymbol": "ASIANPAINT",
+      "exchange": "NSE",
+      "quantity": 15,
+      "averagePrice": 3150,
+      "lastPrice": 2980,
+      "investedValue": 47250,
+      "currentValue": 44700,
+      "pnl": -2550,
+      "pnlPercent": -5.4
+    },
+    {
+      "tradingSymbol": "ITC",
+      "exchange": "NSE",
+      "quantity": 200,
+      "averagePrice": 380,
+      "lastPrice": 410,
+      "investedValue": 76000,
+      "currentValue": 82000,
+      "pnl": 6000,
+      "pnlPercent": 7.89
+    },
+    {
+      "tradingSymbol": "TATAMOTORS",
+      "exchange": "NSE",
+      "quantity": 150,
+      "averagePrice": 520,
+      "lastPrice": 560,
+      "investedValue": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69
+    },
+    {
+      "tradingSymbol": "BHARTIARTL",
+      "exchange": "NSE",
+      "quantity": 40,
+      "averagePrice": 1050,
+      "lastPrice": 1120,
+      "investedValue": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67
+    },
+    {
+      "tradingSymbol": "LT",
+      "exchange": "NSE",
+      "quantity": 20,
+      "averagePrice": 3200,
+      "lastPrice": 3450,
+      "investedValue": 64000,
+      "currentValue": 69000,
+      "pnl": 5000,
+      "pnlPercent": 7.81
+    },
+    {
+      "tradingSymbol": "KOTAKBANK",
+      "exchange": "NSE",
+      "quantity": 45,
+      "averagePrice": 1750,
+      "lastPrice": 1820,
+      "investedValue": 78750,
+      "currentValue": 81900,
+      "pnl": 3150,
+      "pnlPercent": 4
+    },
+    {
+      "tradingSymbol": "INFY",
+      "exchange": "NSE",
+      "quantity": 60,
+      "averagePrice": 1380,
+      "lastPrice": 1450,
+      "investedValue": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07
+    },
+    {
+      "tradingSymbol": "M&M",
+      "exchange": "NSE",
+      "quantity": 35,
+      "averagePrice": 1550,
+      "lastPrice": 1680,
+      "investedValue": 54250,
+      "currentValue": 58800,
+      "pnl": 4550,
+      "pnlPercent": 8.39
+    }
+  ]
+}

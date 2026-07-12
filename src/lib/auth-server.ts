@@ -1,10 +1,8 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { randomBytes, scryptSync } from "crypto";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
 /* ─── File-based persistence (users only) ─── */
-// Vercel serverless: only /tmp is writable; process.cwd()/.auth would fail with
-// "ENOENT: mkdir '/var/task/.auth'" because the function root is read-only.
 const DATA_DIR = process.env.VERCEL === "1" ? "/tmp/.auth" : join(process.cwd(), ".auth");
 const USERS_FILE = join(DATA_DIR, "users.json");
 
@@ -36,10 +34,8 @@ export interface StoredUser {
 
 let users = new Map(Object.entries(readJson<Record<string, StoredUser>>(USERS_FILE, {})));
 
-// ═══ Sessions are IN-MEMORY ONLY ═══
-// NOT persisted to disk. When the server restarts, every session is gone.
-// The user must re-enter their password.
-let sessions = new Map<string, string>();
+// ═══ Sessions are NOW handled by JWT (src/lib/auth.ts) ═══
+// No in-memory Map — JWT is stateless. Server restart does NOT log users out.
 
 /* ─── Password hashing (Node scrypt) ─── */
 const SALT_LEN = 16;
@@ -54,19 +50,17 @@ function hashPassword(password: string): string {
 function verifyPassword(password: string, stored: string): boolean {
   const [salt, key] = stored.split(":");
   const derived = scryptSync(password, salt, KEY_LEN).toString("hex");
-  return timingSafeEqual(Buffer.from(key), Buffer.from(derived));
+  return key.length === derived.length && timingSafeEqual(Buffer.from(key), Buffer.from(derived));
 }
+
+import { timingSafeEqual } from "crypto";
 
 /* ─── Persistence helpers ─── */
 function persistUsers(): void {
   writeJson(USERS_FILE, Object.fromEntries(users));
 }
 
-/* ─── Session management ─── */
-function createToken(): string {
-  return randomBytes(32).toString("hex");
-}
-
+/* ─── User management ─── */
 export function registerUser(
   fullName: string,
   username: string,
@@ -98,7 +92,7 @@ export function registerUser(
 export function loginUser(
   emailOrUsername: string,
   password: string,
-): { user: StoredUser; token: string } {
+): StoredUser {
   const lookup = emailOrUsername.toLowerCase();
   const user = Array.from(users.values()).find(
     (u) => u.email === lookup || u.username === lookup,
@@ -107,19 +101,12 @@ export function loginUser(
   if (!verifyPassword(password, user.passwordHash))
     throw new Error("Invalid email/username or password");
 
-  const token = createToken();
-  sessions.set(token, user.id);
-  return { user, token };
+  return user;
 }
 
-export function getUserByToken(token: string): StoredUser | null {
-  const userId = sessions.get(token);
-  if (!userId) return null;
+/** Get a user by their ID. Used after JWT verification. */
+export function getUserById(userId: string): StoredUser | null {
   return users.get(userId) ?? null;
-}
-
-export function logoutUser(token: string): void {
-  sessions.delete(token);
 }
 
 export function sanitizeUser(user: StoredUser) {

@@ -1,0 +1,28 @@
+{
+  "holdings": [
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "INFY",
+      "stockName": "Infosys",
+      "quantity": 60,
+      "avgBuyPrice": 1380,
+      "investedAmount": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

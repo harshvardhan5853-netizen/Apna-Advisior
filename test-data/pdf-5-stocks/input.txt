@@ -1,0 +1,16 @@
+Portfolio Summary
+=================
+Date: 2026-07-09
+
+Symbol | Stock Name | Quantity | Avg Buy Price | Invested | Current Value | P&L | P&L %
+---------------------------------------------------------------------------------------
+ICICIBANK | ICICI Bank | 100 | 890 | 89000 | 95000 | 6000 | 6.74
+INFY | Infosys | 60 | 1380 | 82800 | 87000 | 4200 | 5.07
+SUNPHARMA | Sun Pharmaceutical | 70 | 880 | 61600 | 64400 | 2800 | 4.55
+ITC | ITC | 200 | 380 | 76000 | 82000 | 6000 | 7.89
+RELIANCE | Reliance Industries | 50 | 2450 | 122500 | 129000 | 6500 | 5.31
+---
+Total Invested: 431900
+Total Value: 457400
+Total P&L: 25500
+-- End --

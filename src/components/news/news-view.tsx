@@ -13,7 +13,7 @@ import {
   readNewsSettings,
   type NewsSettings,
 } from "@/lib/news/settings";
-import { PortfolioSelector } from "@/components/portfolio-view/portfolio-selector";
+import { PortfolioSelector } from "@/components/portfolio/view/portfolio-selector";
 import { SummaryHeader } from "@/components/news/summary-header";
 import { NewsFilterBar, DEFAULT_NEWS_FILTER, applyNewsFilters } from "@/components/news/filter-bar";
 import { NewsFeed, type NewsSortKey } from "@/components/news/news-feed";

@@ -1,0 +1,100 @@
+{
+  "holdings": [
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "HCLTECH",
+      "stockName": "HCL Technologies",
+      "quantity": 55,
+      "avgBuyPrice": 1200,
+      "investedAmount": 66000,
+      "currentValue": 70400,
+      "pnl": 4400,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "stockName": "Bajaj Finance",
+      "quantity": 12,
+      "avgBuyPrice": 6800,
+      "investedAmount": 81600,
+      "currentValue": 86400,
+      "pnl": 4800,
+      "pnlPercent": 5.88,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "stockName": "Asian Paints",
+      "quantity": 15,
+      "avgBuyPrice": 3150,
+      "investedAmount": 47250,
+      "currentValue": 44700,
+      "pnl": -2550,
+      "pnlPercent": -5.4,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ITC",
+      "stockName": "ITC",
+      "quantity": 200,
+      "avgBuyPrice": 380,
+      "investedAmount": 76000,
+      "currentValue": 82000,
+      "pnl": 6000,
+      "pnlPercent": 7.89,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TATAMOTORS",
+      "stockName": "Tata Motors",
+      "quantity": 150,
+      "avgBuyPrice": 520,
+      "investedAmount": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "stockName": "Bharti Airtel",
+      "quantity": 40,
+      "avgBuyPrice": 1050,
+      "investedAmount": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

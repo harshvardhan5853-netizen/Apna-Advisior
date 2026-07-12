@@ -1,0 +1,61 @@
+{
+  "broker": "zerodha",
+  "timestamp": "2026-07-09T10:30:00Z",
+  "holdings": [
+    {
+      "tradingSymbol": "WIPRO",
+      "exchange": "NSE",
+      "quantity": 90,
+      "averagePrice": 430,
+      "lastPrice": 460,
+      "investedValue": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98
+    },
+    {
+      "tradingSymbol": "HDFCBANK",
+      "exchange": "NSE",
+      "quantity": 80,
+      "averagePrice": 1520,
+      "lastPrice": 1680,
+      "investedValue": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53
+    },
+    {
+      "tradingSymbol": "ASIANPAINT",
+      "exchange": "NSE",
+      "quantity": 15,
+      "averagePrice": 3150,
+      "lastPrice": 2980,
+      "investedValue": 47250,
+      "currentValue": 44700,
+      "pnl": -2550,
+      "pnlPercent": -5.4
+    },
+    {
+      "tradingSymbol": "INFY",
+      "exchange": "NSE",
+      "quantity": 60,
+      "averagePrice": 1380,
+      "lastPrice": 1450,
+      "investedValue": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07
+    },
+    {
+      "tradingSymbol": "RELIANCE",
+      "exchange": "NSE",
+      "quantity": 50,
+      "averagePrice": 2450,
+      "lastPrice": 2580,
+      "investedValue": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "holdings": [
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "HDFC",
+      "stockName": "HDFC Bank",
+      "quantity": 80,
+      "avgBuyPrice": 1520,
+      "investedAmount": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "NTPC",
+      "stockName": "NTPC",
+      "quantity": 180,
+      "avgBuyPrice": 210,
+      "investedAmount": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "SUN",
+      "stockName": "Sun Pharmaceutical",
+      "quantity": 70,
+      "avgBuyPrice": 880,
+      "investedAmount": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55,
+      "confidence": 0.8,
+      "needsReview": false
+    },
+    {
+      "symbol": "WIPRO",
+      "stockName": "Wipro",
+      "quantity": 90,
+      "avgBuyPrice": 430,
+      "investedAmount": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98,
+      "confidence": 0.8,
+      "needsReview": false
+    }
+  ]
+}

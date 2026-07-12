@@ -1,0 +1,100 @@
+{
+  "holdings": [
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "INFY",
+      "stockName": "Infosys",
+      "quantity": 60,
+      "avgBuyPrice": 1380,
+      "investedAmount": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "stockName": "Sun Pharmaceutical",
+      "quantity": 70,
+      "avgBuyPrice": 880,
+      "investedAmount": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ITC",
+      "stockName": "ITC",
+      "quantity": 200,
+      "avgBuyPrice": 380,
+      "investedAmount": 76000,
+      "currentValue": 82000,
+      "pnl": 6000,
+      "pnlPercent": 7.89,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "stockName": "Kotak Mahindra Bank",
+      "quantity": 45,
+      "avgBuyPrice": 1750,
+      "investedAmount": 78750,
+      "currentValue": 81900,
+      "pnl": 3150,
+      "pnlPercent": 4,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "WIPRO",
+      "stockName": "Wipro",
+      "quantity": 90,
+      "avgBuyPrice": 430,
+      "investedAmount": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "stockName": "Bajaj Finance",
+      "quantity": 12,
+      "avgBuyPrice": 6800,
+      "investedAmount": 81600,
+      "currentValue": 86400,
+      "pnl": 4800,
+      "pnlPercent": 5.88,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

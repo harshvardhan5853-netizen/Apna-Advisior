@@ -11,6 +11,9 @@ import type {
   PortfolioTotals,
 } from "@/types/portfolio";
 import { uid } from "./utils";
+import { triggerAutoBackup } from "./auto-backup";
+
+const MAX_HISTORY = 50;
 
 /* --------------------------- pure helpers --------------------------- */
 
@@ -118,6 +121,23 @@ export async function listMergeHistory(): Promise<MergeHistoryEntry[]> {
 
 export { getActivePortfolioId, setActivePortfolioId, ACTIVE_PORTFOLIO_KEY };
 
+/* ─── Merge history trim ─── */
+
+async function trimMergeHistory(): Promise<void> {
+  const db = getDB();
+  const count = await db.mergeHistory.count();
+  if (count <= MAX_HISTORY) return;
+
+  const excess = await db.mergeHistory
+    .orderBy("timestamp")
+    .limit(count - MAX_HISTORY)
+    .toArray();
+
+  if (excess.length > 0) {
+    await db.mergeHistory.bulkDelete(excess.map((e) => e.id));
+  }
+}
+
 /* --------------------------- write APIs --------------------------- */
 
 interface CreatePortfolioInput {
@@ -179,6 +199,10 @@ export async function createPortfolio(
     },
   );
 
+  // Auto-trim merge history + trigger auto-backup
+  await trimMergeHistory();
+  triggerAutoBackup(`Created "${portfolio.name}"`);
+
   return portfolio;
 }
 
@@ -232,6 +256,10 @@ export async function mergeIntoPortfolio(input: MergeIntoInput): Promise<{
       },
     });
   });
+
+  // Auto-trim merge history + trigger auto-backup
+  await trimMergeHistory();
+  triggerAutoBackup(`Merged into "${target.name}"`);
 
   return {
     portfolio: nextPortfolio,
@@ -342,5 +370,21 @@ export async function undoLastMerge(): Promise<boolean> {
       await db.mergeHistory.delete(last.id);
     },
   );
+  return true;
+}
+
+/**
+ * Restore a portfolio to the snapshot stored in a specific history entry.
+ * Only works for "merge" type entries that have a previousSnapshot.
+ */
+export async function restoreFromHistoryEntry(entryId: string): Promise<boolean> {
+  const db = getDB();
+  const entry = await db.mergeHistory.get(entryId);
+  if (!entry || entry.action.type !== "merge") return false;
+
+  const snapshot = entry.action.previousSnapshot;
+  await db.transaction("rw", db.portfolios, db.mergeHistory, async () => {
+    await db.portfolios.put(snapshot);
+  });
   return true;
 }

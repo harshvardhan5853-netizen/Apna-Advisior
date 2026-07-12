@@ -1,0 +1,40 @@
+{
+  "holdings": [
+    {
+      "symbol": "SUNPHARMA",
+      "stockName": "Sun Pharmaceutical",
+      "quantity": 70,
+      "avgBuyPrice": 880,
+      "investedAmount": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "stockName": "Kotak Mahindra Bank",
+      "quantity": 45,
+      "avgBuyPrice": 1750,
+      "investedAmount": 78750,
+      "currentValue": 81900,
+      "pnl": 3150,
+      "pnlPercent": 4,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

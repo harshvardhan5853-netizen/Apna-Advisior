@@ -1,0 +1,76 @@
+{
+  "holdings": [
+    {
+      "symbol": "RELIANCE",
+      "stockName": "Reliance Industries",
+      "quantity": 50,
+      "avgBuyPrice": 2450,
+      "investedAmount": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "INFY",
+      "stockName": "Infosys",
+      "quantity": 60,
+      "avgBuyPrice": 1380,
+      "investedAmount": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TCS",
+      "stockName": "Tata Consultancy Services",
+      "quantity": 20,
+      "avgBuyPrice": 3450,
+      "investedAmount": 69000,
+      "currentValue": 72400,
+      "pnl": 3400,
+      "pnlPercent": 4.93,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "MARUTI",
+      "stockName": "Maruti Suzuki",
+      "quantity": 10,
+      "avgBuyPrice": 9500,
+      "investedAmount": 95000,
+      "currentValue": 101000,
+      "pnl": 6000,
+      "pnlPercent": 6.32,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "stockName": "Asian Paints",
+      "quantity": 15,
+      "avgBuyPrice": 3150,
+      "investedAmount": 47250,
+      "currentValue": 44700,
+      "pnl": -2550,
+      "pnlPercent": -5.4,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

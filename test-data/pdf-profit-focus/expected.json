@@ -1,0 +1,52 @@
+{
+  "holdings": [
+    {
+      "symbol": "ICICIBANK",
+      "stockName": "ICICI Bank",
+      "quantity": 100,
+      "avgBuyPrice": 890,
+      "investedAmount": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "TATAMOTORS",
+      "stockName": "Tata Motors",
+      "quantity": 150,
+      "avgBuyPrice": 520,
+      "investedAmount": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "MARUTI",
+      "stockName": "Maruti Suzuki",
+      "quantity": 10,
+      "avgBuyPrice": 9500,
+      "investedAmount": 95000,
+      "currentValue": 101000,
+      "pnl": 6000,
+      "pnlPercent": 6.32,
+      "confidence": 1,
+      "needsReview": false
+    },
+    {
+      "symbol": "WIPRO",
+      "stockName": "Wipro",
+      "quantity": 90,
+      "avgBuyPrice": 430,
+      "investedAmount": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

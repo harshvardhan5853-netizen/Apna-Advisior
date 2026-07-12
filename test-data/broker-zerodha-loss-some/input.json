@@ -1,0 +1,50 @@
+{
+  "broker": "zerodha",
+  "timestamp": "2026-07-09T10:30:00Z",
+  "holdings": [
+    {
+      "tradingSymbol": "TATAMOTORS",
+      "exchange": "NSE",
+      "quantity": 150,
+      "averagePrice": 520,
+      "lastPrice": 560,
+      "investedValue": 78000,
+      "currentValue": 84000,
+      "pnl": 6000,
+      "pnlPercent": 7.69
+    },
+    {
+      "tradingSymbol": "TITAN",
+      "exchange": "NSE",
+      "quantity": 25,
+      "averagePrice": 2800,
+      "lastPrice": 3100,
+      "investedValue": 70000,
+      "currentValue": 77500,
+      "pnl": 7500,
+      "pnlPercent": 10.71
+    },
+    {
+      "tradingSymbol": "SUNPHARMA",
+      "exchange": "NSE",
+      "quantity": 70,
+      "averagePrice": 880,
+      "lastPrice": 920,
+      "investedValue": 61600,
+      "currentValue": 64400,
+      "pnl": 2800,
+      "pnlPercent": 4.55
+    },
+    {
+      "tradingSymbol": "ICICIBANK",
+      "exchange": "NSE",
+      "quantity": 100,
+      "averagePrice": 890,
+      "lastPrice": 950,
+      "investedValue": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74
+    }
+  ]
+}

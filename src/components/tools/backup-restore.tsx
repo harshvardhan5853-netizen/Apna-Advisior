@@ -2,15 +2,47 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Database, Download, Upload, AlertTriangle, Check, ShieldCheck } from "lucide-react";
+import { Database, Download, Upload, AlertTriangle, Check, ShieldCheck, Table2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { getDB } from "@/lib/db";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
 
 const NEWS_SETTINGS_KEY = "apna-advisor.news-settings.v1";
 const LAST_BACKUP_KEY = "apna-advisor.last-backup.v1";
+const AUTO_BACKUP_KEY = "apna-advisor.auto-backup.v1";
+
+interface AutoBackupPref {
+  enabled: boolean;
+  intervalDays: number; // 1 | 7 | 30
+}
+
+const AUTO_BACKUP_INTERVALS = [
+  { value: 1, label: "Daily" },
+  { value: 7, label: "Weekly" },
+  { value: 30, label: "Monthly" },
+] as const;
+
+function loadAutoBackupPref(): AutoBackupPref {
+  try {
+    const raw = localStorage.getItem(AUTO_BACKUP_KEY);
+    if (raw) return JSON.parse(raw) as AutoBackupPref;
+  } catch { /* fall through */ }
+  return { enabled: false, intervalDays: 7 };
+}
+
+function saveAutoBackupPref(pref: AutoBackupPref): void {
+  localStorage.setItem(AUTO_BACKUP_KEY, JSON.stringify(pref));
+}
 
 interface BackupCounts {
   portfolios: number;
@@ -128,6 +160,9 @@ export function BackupRestore() {
   const [lastBackup, setLastBackup] = React.useState<number | null>(null);
   const [exporting, setExporting] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [pendingFile, setPendingFile] = React.useState<File | null>(null);
+  const [autoBackup, setAutoBackup] = React.useState<AutoBackupPref>(loadAutoBackupPref);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const refreshCounts = React.useCallback(async () => {
@@ -147,6 +182,39 @@ export function BackupRestore() {
       if (Number.isFinite(parsed)) setLastBackup(parsed);
     }
   }, [refreshCounts]);
+
+  /* Auto-backup: run on mount if enabled and past due */
+  React.useEffect(() => {
+    if (!autoBackup.enabled) return;
+    const raw = window.localStorage.getItem(LAST_BACKUP_KEY);
+    const lastExport = raw ? Number(raw) : 0;
+    if (!Number.isFinite(lastExport)) return;
+    const elapsed = Date.now() - lastExport;
+    const threshold = autoBackup.intervalDays * 86400 * 1000;
+    if (elapsed >= threshold) {
+      (async () => {
+        try {
+          const blob = await buildBackup();
+          const json = JSON.stringify(blob, null, 2);
+          const file = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(file);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = backupFilename();
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          URL.revokeObjectURL(url);
+          const ts = Date.now();
+          window.localStorage.setItem(LAST_BACKUP_KEY, String(ts));
+          setLastBackup(ts);
+          toast.success("Auto-backup downloaded");
+        } catch {
+          toast.error("Auto-backup failed");
+        }
+      })();
+    }
+  }, [autoBackup]);
 
   const handleExport = React.useCallback(async () => {
     setExporting(true);
@@ -175,15 +243,27 @@ export function BackupRestore() {
   }, []);
 
   const handleFilePick = React.useCallback(async (file: File) => {
-    // Confirm destructive restore before touching Dexie — protects existing users from
-    // accidentally overwriting their portfolios when they only meant to inspect a JSON file.
-    const confirmed = typeof window !== "undefined" && window.confirm(
-      "Restoring will REPLACE every portfolio, target, rebalance log and cached opportunity in your browser. Continue?",
-    );
-    if (!confirmed) return;
-    setImporting(true);
+    // Validate file first, then show dialog
     try {
       const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+      if (!isValidBackup(parsed)) {
+        toast.error("Invalid or corrupted backup file");
+        return;
+      }
+      setPendingFile(file);
+      setConfirmOpen(true);
+    } catch (err) {
+      toast.error("Could not read backup file");
+    }
+  }, []);
+
+  const executeRestore = React.useCallback(async () => {
+    if (!pendingFile) return;
+    setConfirmOpen(false);
+    setImporting(true);
+    try {
+      const text = await pendingFile.text();
       const parsed = JSON.parse(text) as unknown;
       if (!isValidBackup(parsed)) {
         toast.error("Invalid backup file");
@@ -200,8 +280,9 @@ export function BackupRestore() {
       toast.error(err instanceof Error ? err.message : "Could not restore backup");
     } finally {
       setImporting(false);
+      setPendingFile(null);
     }
-  }, [refreshCounts]);
+  }, [pendingFile, refreshCounts]);
 
   const handleImportClick = React.useCallback(() => {
     fileInputRef.current?.click();
@@ -240,16 +321,72 @@ export function BackupRestore() {
           <Tile label="Preferences" value={counts ? formatNumber(counts.meta) : "—"} />
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        {/* ── Auto-backup toggle ── */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.04] bg-white/[0.02] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoBackup.enabled}
+              onClick={() => {
+                const next = { ...autoBackup, enabled: !autoBackup.enabled };
+                setAutoBackup(next);
+                saveAutoBackupPref(next);
+              }}
+              className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+                autoBackup.enabled ? "bg-emerald-500" : "bg-white/[0.08]",
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
+                  autoBackup.enabled ? "translate-x-[18px]" : "translate-x-0.5",
+                )}
+              />
+            </button>
+            <div>
+              <div className="text-sm font-medium leading-tight">
+                {autoBackup.enabled ? "Auto-backup active" : "Auto-backup"}
+              </div>
+              {autoBackup.enabled ? (
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span className="text-xs text-emerald-300/60">Every</span>
+                  <select
+                    value={autoBackup.intervalDays}
+                    onChange={(e) => {
+                      const next = { ...autoBackup, intervalDays: Number(e.target.value) };
+                      setAutoBackup(next);
+                      saveAutoBackupPref(next);
+                    }}
+                    className="cursor-pointer appearance-none rounded-lg border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-xs text-emerald-200/80 hover:border-white/[0.12] focus:outline-none"
+                  >
+                    {AUTO_BACKUP_INTERVALS.map((i) => (
+                      <option key={i.value} value={i.value} className="bg-[#0d1815]">
+                        {i.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Download a fresh snapshot automatically</p>
+              )}
+            </div>
+          </div>
+          {lastBackup ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-teal-400/25 bg-teal-500/[0.08] px-2 py-0.5 text-xs text-teal-100">
+              <Check className="h-3 w-3" /> Last export {formatDate(lastBackup)}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-muted-foreground">
             {counts
               ? `${formatNumber(totalRecords)} record(s) across ${Object.keys(counts).length} table(s).`
               : "Reading database…"}
-            {lastBackup ? (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-teal-400/25 bg-teal-500/[0.08] px-2 py-0.5 text-teal-100">
-                <Check className="h-3 w-3" /> Last export {formatDate(lastBackup)}
-              </span>
-            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
@@ -312,6 +449,73 @@ export function BackupRestore() {
           </p>
         </div>
       </motion.section>
+
+      {/* ── Restore confirmation dialog ── */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle>Restore backup?</DialogTitle>
+            <DialogDescription>
+              This will <span className="font-semibold text-amber-200">replace every table</span> in
+              your browser&apos;s database with the contents of this backup file.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Table2 className="h-3.5 w-3.5" />
+              Tables being replaced
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 text-sm">
+              {counts && (
+                <>
+                  <div className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                    <span className="text-muted-foreground">Portfolios</span>
+                    <span className="font-medium">{formatNumber(counts.portfolios)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                    <span className="text-muted-foreground">Targets</span>
+                    <span className="font-medium">{formatNumber(counts.targetPortfolios)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                    <span className="text-muted-foreground">Merge history</span>
+                    <span className="font-medium">{formatNumber(counts.mergeHistory)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                    <span className="text-muted-foreground">Rebalance logs</span>
+                    <span className="font-medium">{formatNumber(counts.rebalanceHistory)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                    <span className="text-muted-foreground">Opportunity cache</span>
+                    <span className="font-medium">{formatNumber(counts.opportunityCache)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                    <span className="text-muted-foreground">Preferences</span>
+                    <span className="font-medium">{formatNumber(counts.meta)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-2xl border border-amber-400/20 bg-amber-500/[0.06] p-3 text-xs text-amber-100">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              Current data will be permanently deleted. Make sure the backup file is from your latest export before continuing.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => { setConfirmOpen(false); setPendingFile(null); }}>
+              Cancel
+            </Button>
+            <Button variant="default" size="sm" onClick={executeRestore} className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/30">
+              <Upload className="mr-2 h-3.5 w-3.5" />
+              Restore
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

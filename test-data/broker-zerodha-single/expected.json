@@ -1,0 +1,16 @@
+{
+  "holdings": [
+    {
+      "symbol": "NTPC",
+      "stockName": "NTPC",
+      "quantity": 180,
+      "avgBuyPrice": 210,
+      "investedAmount": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29,
+      "confidence": 1,
+      "needsReview": false
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { DashboardHeader } from "./dashboard-header";
 import { CardGrid } from "./card-grid";
 import { PortfolioStatusCard } from "./portfolio-status-card";
 import { UserMenu } from "@/components/auth/user-menu";
+import { NotificationBell } from "./notification-bell";
 
 export function DashboardShell() {
   const { user, loading } = useAuth();
@@ -60,7 +61,10 @@ export function DashboardShell() {
         <div className="flex items-start justify-between">
           <DashboardHeader />
           <div className="flex flex-col items-end gap-6">
-            <UserMenu />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <UserMenu />
+            </div>
             <PortfolioStatusCard />
           </div>
         </div>

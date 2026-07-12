@@ -1,11 +1,30 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { getExtractServiceStatus, runServerExtract, runPythonCheck, EXTRACTION_TIMEOUT_MS } from "@/lib/parsers/server-extract";
+import { extractSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 const MAX_BYTES = 50 * 1024 * 1024;
+
+const ALLOWED_EXTENSIONS = /\.(csv|xlsx?|pdf|png|jpe?g|webp|bmp)$/i;
+
+const USER_FRIENDLY_ERRORS: Record<string, string> = {
+  "python-unavailable": "Extraction service unavailable. Please ensure Python is installed and the virtual environment is set up.",
+  "script-missing": "Extraction script not found. Please reinstall the application.",
+  "extraction-timeout": "Extraction timed out. The file may be too large or complex. Try a smaller or clearer file.",
+  "extraction-aborted": "Extraction was cancelled.",
+  "extract-failed": "Could not extract holdings from the file. The format may be unsupported or the file may be corrupted.",
+  "invalid-json": "Extraction produced unexpected output. This may indicate a corrupted file.",
+  "invalid-multipart": "Invalid upload data. Please try again.",
+  "missing-file": "No file provided. Please select a file to upload.",
+  "empty-file": "The uploaded file is empty. Please select a file with data.",
+  "file-too-large": "File exceeds the 50MB limit. Please upload a smaller file.",
+  "unsupported-type": "This file type is not supported. Please upload a CSV, Excel, PDF, or image file.",
+  "server-error": "Something went wrong on our end. Please try again.",
+};
 
 function isPdfName(name: string, mime: string): boolean {
   return mime.includes("pdf") || name.toLowerCase().endsWith(".pdf");
@@ -47,6 +66,15 @@ export async function POST(req: Request) {
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "file-too-large", detail: "File exceeds 50MB limit" }, { status: 413 });
+  }
+
+  // File extension whitelist
+  const fileNameExt = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : "";
+  if (fileNameExt && !ALLOWED_EXTENSIONS.test(fileNameExt)) {
+    return NextResponse.json(
+      { error: "unsupported-type", detail: `File type "${fileNameExt}" is not supported. Accepted: CSV, XLSX, PDF, PNG, JPG, WEBP, BMP.` },
+      { status: 400 },
+    );
   }
 
   // Create cancellation signal: browser disconnect + hard timeout
@@ -98,7 +126,15 @@ export async function POST(req: Request) {
     }
 
     // Normal extraction mode
-    const kindField = String(formData.get("kind") ?? "auto");
+    const fieldsParsed = extractSchema.safeParse(Object.fromEntries(formData));
+    if (!fieldsParsed.success) {
+      cleanup();
+      return NextResponse.json(
+        { error: "invalid-multipart", detail: fieldsParsed.error.issues.map((e) => e.message).join("; ") },
+        { status: 400 },
+      );
+    }
+    const kindField = fieldsParsed.data.kind ?? "auto";
     let kind: "image" | "pdf" | "xlsx";
     if (kindField === "xlsx" || isExcelName(name, mime)) {
       kind = "xlsx";
@@ -114,9 +150,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const geminiApiKey = formData.get("geminiApiKey");
-    const geminiModel = formData.get("geminiModel");
-    const password = String(formData.get("password") ?? "");
+    const geminiApiKey = fieldsParsed.data.geminiApiKey;
+    const geminiModel = fieldsParsed.data.geminiModel;
+    const password = fieldsParsed.data.password ?? "";
 
     try {
       const result = await runServerExtract({
@@ -147,8 +183,10 @@ export async function POST(req: Request) {
         : code === "extraction-timeout" || code === "extraction-aborted" ? 504
         : code === "invalid-json" ? 500
         : 500;
+      // User-friendly message — never expose stack traces or internal paths
+      const friendly = USER_FRIENDLY_ERRORS[code] ?? USER_FRIENDLY_ERRORS["server-error"];
       return NextResponse.json(
-        { error: code, detail: e.detail ?? e.message, raw: e.raw },
+        { error: code, detail: friendly },
         { status },
       );
     }

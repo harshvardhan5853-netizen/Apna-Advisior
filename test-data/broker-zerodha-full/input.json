@@ -1,0 +1,116 @@
+{
+  "broker": "zerodha",
+  "timestamp": "2026-07-09T10:30:00Z",
+  "holdings": [
+    {
+      "tradingSymbol": "RELIANCE",
+      "exchange": "NSE",
+      "quantity": 50,
+      "averagePrice": 2450,
+      "lastPrice": 2580,
+      "investedValue": 122500,
+      "currentValue": 129000,
+      "pnl": 6500,
+      "pnlPercent": 5.31
+    },
+    {
+      "tradingSymbol": "BHARTIARTL",
+      "exchange": "NSE",
+      "quantity": 40,
+      "averagePrice": 1050,
+      "lastPrice": 1120,
+      "investedValue": 42000,
+      "currentValue": 44800,
+      "pnl": 2800,
+      "pnlPercent": 6.67
+    },
+    {
+      "tradingSymbol": "INFY",
+      "exchange": "NSE",
+      "quantity": 60,
+      "averagePrice": 1380,
+      "lastPrice": 1450,
+      "investedValue": 82800,
+      "currentValue": 87000,
+      "pnl": 4200,
+      "pnlPercent": 5.07
+    },
+    {
+      "tradingSymbol": "SBIN",
+      "exchange": "NSE",
+      "quantity": 120,
+      "averagePrice": 580,
+      "lastPrice": 620,
+      "investedValue": 69600,
+      "currentValue": 74400,
+      "pnl": 4800,
+      "pnlPercent": 6.9
+    },
+    {
+      "tradingSymbol": "HDFCBANK",
+      "exchange": "NSE",
+      "quantity": 80,
+      "averagePrice": 1520,
+      "lastPrice": 1680,
+      "investedValue": 121600,
+      "currentValue": 134400,
+      "pnl": 12800,
+      "pnlPercent": 10.53
+    },
+    {
+      "tradingSymbol": "WIPRO",
+      "exchange": "NSE",
+      "quantity": 90,
+      "averagePrice": 430,
+      "lastPrice": 460,
+      "investedValue": 38700,
+      "currentValue": 41400,
+      "pnl": 2700,
+      "pnlPercent": 6.98
+    },
+    {
+      "tradingSymbol": "ICICIBANK",
+      "exchange": "NSE",
+      "quantity": 100,
+      "averagePrice": 890,
+      "lastPrice": 950,
+      "investedValue": 89000,
+      "currentValue": 95000,
+      "pnl": 6000,
+      "pnlPercent": 6.74
+    },
+    {
+      "tradingSymbol": "NTPC",
+      "exchange": "NSE",
+      "quantity": 180,
+      "averagePrice": 210,
+      "lastPrice": 240,
+      "investedValue": 37800,
+      "currentValue": 43200,
+      "pnl": 5400,
+      "pnlPercent": 14.29
+    },
+    {
+      "tradingSymbol": "BAJFINANCE",
+      "exchange": "NSE",
+      "quantity": 12,
+      "averagePrice": 6800,
+      "lastPrice": 7200,
+      "investedValue": 81600,
+      "currentValue": 86400,
+      "pnl": 4800,
+      "pnlPercent": 5.88
+    },
+    {
+      "tradingSymbol": "MARUTI",
+      "exchange": "NSE",
+      "quantity": 10,
+      "averagePrice": 9500,
+      "lastPrice": 10100,
+      "investedValue": 95000,
+      "currentValue": 101000,
+      "pnl": 6000,
+      "pnlPercent": 6.32
+    }
+  ]
+}
